@@ -1,0 +1,14 @@
+# GateKrumpa — Default Credential Pairs
+# Format: username:password (one pair per line)
+# Lines starting with # are comments; blank lines are ignored.
+#
+# This file is loaded at runtime by the BossKey auth probe module.
+# Add custom entries or replace entirely for your environment.
+admin:admin
+admin:password
+admin:123456
+root:root
+root:toor
+test:test
+user:user
+guest:guest
