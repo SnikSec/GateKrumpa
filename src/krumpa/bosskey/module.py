@@ -18,6 +18,12 @@ from krumpa.bosskey.session_timeout import SessionTimeoutTester
 from krumpa.bosskey.lockout_tester import AccountLockoutTester
 from krumpa.bosskey.jwt_attacks import JwtAdvancedTester
 from krumpa.bosskey.rbac_matrix import RbacMatrixBuilder
+from krumpa.bosskey.auth_scheme_enforcer import AuthSchemeEnforcer
+from krumpa.bosskey.password_reset_tester import PasswordResetTester
+from krumpa.bosskey.credential_transport import CredentialTransportAuditor
+from krumpa.bosskey.token_storage import TokenStorageAnalyzer
+from krumpa.bosskey.registration_tester import RegistrationTester
+from krumpa.bosskey.mfa_tester import MfaTester
 
 logger = logging.getLogger("krumpa.bosskey")
 
@@ -47,6 +53,12 @@ class BossKeyModule(BaseModule):
         self._lockout_tester = AccountLockoutTester()
         self._jwt_tester = JwtAdvancedTester()
         self._rbac_builder = RbacMatrixBuilder()
+        self._auth_scheme_enforcer = AuthSchemeEnforcer()
+        self._password_reset = PasswordResetTester()
+        self._credential_transport = CredentialTransportAuditor()
+        self._token_storage = TokenStorageAnalyzer()
+        self._registration_tester = RegistrationTester()
+        self._mfa_tester = MfaTester()
         self._login_endpoints = login_endpoints or []
 
     async def setup(self, ctx: ScanContext) -> None:
@@ -68,6 +80,18 @@ class BossKeyModule(BaseModule):
             self._lockout_tester._owns_client = False
             self._rbac_builder._client = ctx.http_client
             self._rbac_builder._owns_client = False
+            self._auth_scheme_enforcer._client = ctx.http_client
+            self._auth_scheme_enforcer._owns_client = False
+            self._password_reset._client = ctx.http_client
+            self._password_reset._owns_client = False
+            self._credential_transport._client = ctx.http_client
+            self._credential_transport._owns_client = False
+            self._token_storage._client = ctx.http_client
+            self._token_storage._owns_client = False
+            self._registration_tester._client = ctx.http_client
+            self._registration_tester._owns_client = False
+            self._mfa_tester._client = ctx.http_client
+            self._mfa_tester._owns_client = False
 
     async def run(self, ctx: ScanContext) -> List[Finding]:
         findings: List[Finding] = []
@@ -144,6 +168,48 @@ class BossKeyModule(BaseModule):
         if ctx.targets:
             rbac_findings = await self._rbac_builder.test_and_report(ctx.targets)
             findings.extend(rbac_findings)
+
+        # --- Auth scheme enforcement on all targets -------------------------
+        for target in ctx.targets:
+            logger.info("Testing auth scheme enforcement on %s", target.url)
+            auth_headers = {k: v for k, v in target.headers.items() if k.lower() == "authorization"}
+            scheme_findings = await self._auth_scheme_enforcer.check(
+                target, auth_headers=auth_headers or None,
+            )
+            findings.extend(scheme_findings)
+
+        # --- Password reset flow testing on reset endpoints -----------------
+        reset_targets = self._get_reset_targets(ctx)
+        for target in reset_targets:
+            logger.info("Testing password reset flow on %s", target.url)
+            reset_findings = await self._password_reset.test(target)
+            findings.extend(reset_findings)
+
+        # --- Credential transport audit on login targets --------------------
+        for target in login_urls:
+            logger.info("Auditing credential transport on %s", target.url)
+            transport_findings = await self._credential_transport.audit(target)
+            findings.extend(transport_findings)
+
+        # --- Token storage analysis on all targets --------------------------
+        for target in ctx.targets:
+            logger.info("Analysing token storage on %s", target.url)
+            storage_findings = await self._token_storage.analyze(target)
+            findings.extend(storage_findings)
+
+        # --- Registration flow testing on register endpoints ----------------
+        reg_targets = self._get_registration_targets(ctx)
+        for target in reg_targets:
+            logger.info("Testing registration flow on %s", target.url)
+            reg_findings = await self._registration_tester.test(target)
+            findings.extend(reg_findings)
+
+        # --- MFA testing on MFA/2FA endpoints --------------------------------
+        mfa_targets = self._get_mfa_targets(ctx)
+        for target in mfa_targets:
+            logger.info("Testing MFA on %s", target.url)
+            mfa_findings = await self._mfa_tester.test(target)
+            findings.extend(mfa_findings)
 
         for f in findings:
             self.add_finding(f)
@@ -229,6 +295,51 @@ class BossKeyModule(BaseModule):
         """Return targets that look like registration or password-change endpoints."""
         hints = ("/register", "/signup", "/password", "/change-password", "/reset-password",
                  "/api/register", "/api/users", "/api/signup")
+        results: List[Target] = []
+        seen: set = set()
+        for t in ctx.targets:
+            lower = t.url.lower()
+            if any(lower.endswith(h) or h + "?" in lower or h + "/" in lower for h in hints):
+                if t.url not in seen:
+                    seen.add(t.url)
+                    results.append(t)
+        return results
+
+    @staticmethod
+    def _get_reset_targets(ctx: ScanContext) -> List[Target]:
+        """Return targets that look like password reset endpoints."""
+        hints = ("/reset", "/forgot", "/recover", "/password-reset", "/reset-password",
+                 "/api/reset", "/api/forgot-password")
+        results: List[Target] = []
+        seen: set = set()
+        for t in ctx.targets:
+            lower = t.url.lower()
+            if any(lower.endswith(h) or h + "?" in lower or h + "/" in lower for h in hints):
+                if t.url not in seen:
+                    seen.add(t.url)
+                    results.append(t)
+        return results
+
+    @staticmethod
+    def _get_registration_targets(ctx: ScanContext) -> List[Target]:
+        """Return targets that look like registration endpoints."""
+        hints = ("/register", "/signup", "/api/register", "/api/signup",
+                 "/create-account", "/api/users")
+        results: List[Target] = []
+        seen: set = set()
+        for t in ctx.targets:
+            lower = t.url.lower()
+            if any(lower.endswith(h) or h + "?" in lower or h + "/" in lower for h in hints):
+                if t.url not in seen:
+                    seen.add(t.url)
+                    results.append(t)
+        return results
+
+    @staticmethod
+    def _get_mfa_targets(ctx: ScanContext) -> List[Target]:
+        """Return targets that look like MFA/2FA endpoints."""
+        hints = ("/mfa", "/2fa", "/two-factor", "/otp", "/totp", "/verify",
+                 "/challenge", "/api/mfa", "/api/2fa")
         results: List[Target] = []
         seen: set = set()
         for t in ctx.targets:
