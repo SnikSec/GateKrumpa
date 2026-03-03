@@ -14,6 +14,12 @@ from krumpa.waaaghlogic.mass_assignment import MassAssignmentTester
 from krumpa.waaaghlogic.file_upload import FileUploadTester
 from krumpa.waaaghlogic.privilege_escalation import PrivilegeEscalationTester
 from krumpa.waaaghlogic.pagination import PaginationTester
+from krumpa.waaaghlogic.data_validation import DataValidationTester
+from krumpa.waaaghlogic.numeric_precision import NumericPrecisionTester
+from krumpa.waaaghlogic.input_length_boundary import InputLengthBoundaryTester
+from krumpa.waaaghlogic.bulk_operation_abuse import BulkOperationTester
+from krumpa.waaaghlogic.state_machine import StateMachineTester
+from krumpa.waaaghlogic.graphql_logic import GraphqlLogicTester
 
 logger = logging.getLogger("krumpa.waaaghlogic")
 
@@ -39,6 +45,12 @@ class WaaaghLogicModule(BaseModule):
         self._file_upload = FileUploadTester()
         self._privesc = PrivilegeEscalationTester()
         self._pagination = PaginationTester()
+        self._data_validation = DataValidationTester()
+        self._numeric_precision = NumericPrecisionTester()
+        self._input_length = InputLengthBoundaryTester()
+        self._bulk_ops = BulkOperationTester()
+        self._state_machine = StateMachineTester()
+        self._graphql_logic = GraphqlLogicTester()
         self._workflows = workflows or []
         self._idempotency_targets = idempotency_targets or []
 
@@ -57,6 +69,18 @@ class WaaaghLogicModule(BaseModule):
             self._privesc._owns_client = False
             self._pagination._client = ctx.http_client
             self._pagination._owns_client = False
+            self._data_validation._client = ctx.http_client
+            self._data_validation._owns_client = False
+            self._numeric_precision._client = ctx.http_client
+            self._numeric_precision._owns_client = False
+            self._input_length._client = ctx.http_client
+            self._input_length._owns_client = False
+            self._bulk_ops._client = ctx.http_client
+            self._bulk_ops._owns_client = False
+            self._state_machine._client = ctx.http_client
+            self._state_machine._owns_client = False
+            self._graphql_logic._client = ctx.http_client
+            self._graphql_logic._owns_client = False
 
     async def run(self, ctx: ScanContext) -> List[Finding]:
         findings: List[Finding] = []
@@ -126,6 +150,54 @@ class WaaaghLogicModule(BaseModule):
                 logger.info("Testing pagination on %s", target.url)
                 page_findings = await self._pagination.test(target)
                 findings.extend(page_findings)
+
+        # --- Data validation bypass on state-changing endpoints ------------
+        for url, method in auto_targets:
+            target = self._resolve_target(url, ctx)
+            logger.info("Testing data validation on %s %s", method, url)
+            dv_findings = await self._data_validation.test(target)
+            findings.extend(dv_findings)
+
+        # --- Numeric precision abuse on state-changing endpoints -----------
+        for url, method in auto_targets:
+            if method.upper() in ("POST", "PUT", "PATCH"):
+                target = self._resolve_target(url, ctx)
+                logger.info("Testing numeric precision on %s %s", method, url)
+                np_findings = await self._numeric_precision.test(target)
+                findings.extend(np_findings)
+
+        # --- Input length boundary testing on state-changing endpoints -----
+        for url, method in auto_targets:
+            target = self._resolve_target(url, ctx)
+            logger.info("Testing input length boundaries on %s %s", method, url)
+            il_findings = await self._input_length.test(target)
+            findings.extend(il_findings)
+
+        # --- Bulk operation abuse on batch/bulk endpoints ------------------
+        bulk_targets = [t for t in ctx.targets if any(
+            h in t.url.lower() for h in ("/bulk", "/batch", "/mass", "/all", "/export")
+        )]
+        for target in bulk_targets:
+            logger.info("Testing bulk operation abuse on %s", target.url)
+            bulk_findings = await self._bulk_ops.test(target)
+            findings.extend(bulk_findings)
+
+        # --- State machine testing on state-changing endpoints -------------
+        for url, method in auto_targets:
+            if method.upper() in ("POST", "PUT", "PATCH"):
+                target = self._resolve_target(url, ctx)
+                logger.info("Testing state machine transitions on %s", target.url)
+                sm_findings = await self._state_machine.test(target)
+                findings.extend(sm_findings)
+
+        # --- GraphQL-specific logic on GraphQL endpoints -------------------
+        graphql_targets = [t for t in ctx.targets if any(
+            h in t.url.lower() for h in ("/graphql", "/gql", "/query")
+        )]
+        for target in graphql_targets:
+            logger.info("Testing GraphQL logic on %s", target.url)
+            gql_findings = await self._graphql_logic.test(target)
+            findings.extend(gql_findings)
 
         for f in findings:
             self.add_finding(f)
