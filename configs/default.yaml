@@ -1,0 +1,77 @@
+# GateKrumpa — Default Scan Configuration
+# ==========================================
+#
+# Usage:
+#   gatekrumpa scan --target https://api.example.com --config configs/default.yaml
+#
+# All settings are optional — sensible defaults are used when omitted.
+
+# ── Scan settings ──────────────────────────────────────────────────
+scan:
+  # Modules to run, in order.  Omit to run all in default pipeline order.
+  modules:
+    - sneakygits
+    - openkrump
+    - bosskey
+    - waaaghlogic
+    - grotassault
+    - redteef
+    - waaaghgate
+
+  # Output report formats
+  formats:
+    - json
+    - markdown
+
+# ── Module-specific configuration ─────────────────────────────────
+
+sneakygits:
+  max_depth: 3
+  max_pages: 500
+  include_robots: true
+  include_sitemaps: true
+
+bosskey:
+  # Path to custom credentials file (one user:pass per line)
+  # credentials_file: configs/default_creds.txt
+  max_login_attempts: 20
+
+grotassault:
+  strategies:
+    - injection
+    - boundary
+    - encoding
+    - format
+  timeout: 10.0
+
+waaaghlogic:
+  concurrency: 5
+
+openkrump:
+  # spec_url: https://api.example.com/openapi.json
+  strict_mode: false
+
+waaaghgate:
+  policy:
+    fail:
+      critical: 1
+      high: 5
+    warn:
+      medium: 10
+    ignore_tags:
+      - accepted-risk
+  formats:
+    - json
+    - sarif
+    - markdown
+
+# ── HTTP client settings ──────────────────────────────────────────
+http:
+  timeout: 30.0
+  retries: 3
+  backoff: 1.0
+  rate_limit: 0.0          # seconds between requests (0 = no limit)
+  max_redirects: 10
+  verify_ssl: true
+  # proxy: http://127.0.0.1:8080  # Burp / ZAP upstream proxy
+  allow_private_networks: false

@@ -1,0 +1,31 @@
+{
+  "include": ["src"],
+  "exclude": ["**/__pycache__"],
+  "pythonVersion": "3.11",
+  "pythonPlatform": "All",
+  "typeCheckingMode": "standard",
+  "reportMissingImports": true,
+  "reportMissingTypeStubs": false,
+  "reportUnusedImport": "warning",
+  "reportUnusedVariable": "warning",
+  "reportUntypedFunctionDecorator": "warning",
+  "reportUntypedClassDecorator": "warning",
+  "reportGeneralTypeIssues": true,
+  "reportOptionalMemberAccess": true,
+  "reportOptionalCall": true,
+  "reportOptionalIterable": true,
+  "reportOptionalSubscript": true,
+  "reportPrivateUsage": "warning",
+  "reportConstantRedefinition": "warning",
+  "reportIncompatibleMethodOverride": true,
+  "reportIncompatibleVariableOverride": true,
+  "reportUnnecessaryTypeIgnoreComment": "warning",
+  "reportUnnecessaryIsInstance": "warning",
+  "venvPath": null,
+  "executionEnvironments": [
+    {
+      "root": "src",
+      "pythonVersion": "3.11"
+    }
+  ]
+}
