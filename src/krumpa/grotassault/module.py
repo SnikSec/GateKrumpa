@@ -25,6 +25,12 @@ from krumpa.grotassault.open_redirect import OpenRedirectChecker
 from krumpa.grotassault.ldap_payloads import LdapChecker
 from krumpa.grotassault.prototype_pollution import PrototypePollutionChecker
 from krumpa.grotassault.param_pollution import ParamPollutionChecker
+from krumpa.grotassault.graphql_fuzzer import GraphqlFuzzer
+from krumpa.grotassault.cache_poisoning import CachePoisonChecker
+from krumpa.grotassault.unicode_normalization import UnicodeNormalizationChecker
+from krumpa.grotassault.content_type_fuzzer import ContentTypeAwareFuzzer
+from krumpa.grotassault.response_fingerprint import ResponseFingerprinter
+from krumpa.grotassault.payload_db import PayloadDB
 
 logger = logging.getLogger("krumpa.grotassault")
 
@@ -72,6 +78,12 @@ class GrotAssaultModule(BaseModule):
         self._ldap_checker = LdapChecker(http_client=http_client)
         self._proto_pollution = PrototypePollutionChecker(http_client=http_client)
         self._param_pollution = ParamPollutionChecker(http_client=http_client)
+        self._graphql_fuzzer = GraphqlFuzzer(http_client=http_client)
+        self._cache_poison = CachePoisonChecker(http_client=http_client)
+        self._unicode_norm = UnicodeNormalizationChecker(http_client=http_client)
+        self._ct_aware_fuzzer = ContentTypeAwareFuzzer(http_client=http_client)
+        self._resp_fingerprinter = ResponseFingerprinter()
+        self._payload_db = PayloadDB()
 
     async def setup(self, ctx: ScanContext) -> None:
         """Wire shared HTTP client into fuzzer and sub-checkers if no explicit client."""
@@ -104,6 +116,14 @@ class GrotAssaultModule(BaseModule):
             self._proto_pollution._owns_client = False
             self._param_pollution._client = ctx.http_client
             self._param_pollution._owns_client = False
+            self._graphql_fuzzer._client = ctx.http_client
+            self._graphql_fuzzer._owns_client = False
+            self._cache_poison._client = ctx.http_client
+            self._cache_poison._owns_client = False
+            self._unicode_norm._client = ctx.http_client
+            self._unicode_norm._owns_client = False
+            self._ct_aware_fuzzer._client = ctx.http_client
+            self._ct_aware_fuzzer._owns_client = False
 
     # ------------------------------------------------------------------
     # Module lifecycle
@@ -215,6 +235,39 @@ class GrotAssaultModule(BaseModule):
             logger.info("HTTP parameter pollution testing %s", target.url)
             hpp_findings = await self._param_pollution.check(target)
             findings.extend(hpp_findings)
+
+        # 16. GraphQL fuzzing — depth bombs, alias abuse, batched mutations
+        for target in ctx.targets:
+            if any(kw in target.url.lower() for kw in ("/graphql", "/gql", "/query")):
+                logger.info("GraphQL fuzzing %s", target.url)
+                gql_findings = await self._graphql_fuzzer.check(target)
+                findings.extend(gql_findings)
+
+        # 17. Cache poisoning — unkeyed headers, query string poisoning
+        for target in ctx.targets:
+            if target.method.upper() == "GET":
+                logger.info("Cache poisoning testing %s", target.url)
+                cache_findings = await self._cache_poison.check(target)
+                findings.extend(cache_findings)
+
+        # 18. Unicode normalization attacks
+        for target in ctx.targets:
+            logger.info("Unicode normalization testing %s", target.url)
+            uni_findings = await self._unicode_norm.check(target)
+            findings.extend(uni_findings)
+
+        # 19. Content-type-aware body fuzzing — GraphQL, SOAP, YAML etc.
+        for target in ctx.targets:
+            if target.method.upper() in ("POST", "PUT", "PATCH"):
+                logger.info("Content-type-aware fuzzing %s %s", target.method, target.url)
+                ct_findings = await self._ct_aware_fuzzer.check(target)
+                findings.extend(ct_findings)
+
+        # 20. Response fingerprinting — cluster by similarity
+        if ctx.targets:
+            logger.info("Response fingerprinting across %d targets", len(ctx.targets))
+            fp_findings = self._resp_fingerprinter.analyze(ctx.targets)
+            findings.extend(fp_findings)
 
         for f in findings:
             self.add_finding(f)

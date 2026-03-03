@@ -20,6 +20,9 @@ from krumpa.openkrump.spec_mass_assignment import SpecMassAssignmentChecker
 from krumpa.openkrump.graphql_analyzer import GraphqlAnalyzer
 from krumpa.openkrump.excessive_data import ExcessiveDataDetector
 from krumpa.openkrump.spec_discovery import SpecDiscovery
+from krumpa.openkrump.security_scheme_enforcer import SecuritySchemeEnforcer
+from krumpa.openkrump.param_constraint_tester import ParamConstraintTester
+from krumpa.openkrump.spec_diff import SpecDiffChecker
 
 logger = logging.getLogger("krumpa.openkrump")
 
@@ -51,6 +54,9 @@ class OpenKrumpModule(BaseModule):
         self._graphql = GraphqlAnalyzer(http_client=http_client)
         self._excessive_data = ExcessiveDataDetector(http_client=http_client)
         self._spec_discovery = SpecDiscovery(http_client=http_client)
+        self._sec_enforcer = SecuritySchemeEnforcer(http_client=http_client)
+        self._param_tester = ParamConstraintTester(http_client=http_client)
+        self._spec_diff = SpecDiffChecker(http_client=http_client)
         self._client = http_client
         self._explicit_client = http_client is not None
         self._owns_client = http_client is None
@@ -68,6 +74,12 @@ class OpenKrumpModule(BaseModule):
             self._excessive_data._owns_client = False
             self._spec_discovery._client = ctx.http_client
             self._spec_discovery._owns_client = False
+            self._sec_enforcer._client = ctx.http_client
+            self._sec_enforcer._owns_client = False
+            self._param_tester._client = ctx.http_client
+            self._param_tester._owns_client = False
+            self._spec_diff._client = ctx.http_client
+            self._spec_diff._owns_client = False
 
     # ------------------------------------------------------------------
     # Module lifecycle
@@ -225,6 +237,19 @@ class OpenKrumpModule(BaseModule):
                         findings.extend(ed_findings)
                 except (httpx.HTTPError, OSError) as exc:
                     logger.debug("Excessive data check error for %s %s: %s", ep.method, url, exc)
+
+            # 11. Security scheme enforcement — unauthenticated requests → verify 401/403
+            base = self._parser.resolve_url(spec, "")
+            sec_findings = await self._sec_enforcer.enforce(spec, self.endpoints, base)
+            findings.extend(sec_findings)
+
+            # 12. Parameter constraint testing — negative tests from spec constraints
+            param_findings = await self._param_tester.test_endpoints(self.endpoints, base)
+            findings.extend(param_findings)
+
+            # 13. Spec diff / shadow API detection — deployed vs. spec comparison
+            diff_findings = await self._spec_diff.diff(spec, self.endpoints, base)
+            findings.extend(diff_findings)
 
         finally:
             if owns_temp_client:

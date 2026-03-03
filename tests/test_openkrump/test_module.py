@@ -49,6 +49,10 @@ def _make_openkrump(**kw) -> OpenKrumpModule:
     mod = OpenKrumpModule(**kw)
     mod._resp_validator = _NoopAsync()
     mod._spec_mass_assign = _NoopAsync()
+    # Phase 3 sub-components
+    mod._sec_enforcer = _NoopAsync()
+    mod._param_tester = _NoopAsync()
+    mod._spec_diff = _NoopAsync()
     return mod
 
 
