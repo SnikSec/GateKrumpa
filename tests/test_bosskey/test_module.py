@@ -69,6 +69,13 @@ def _make_module(
     mod._lockout_tester = _NoopAsync()
     mod._jwt_tester = _NoopSync()
     mod._rbac_builder = _NoopAsync()
+    # Phase 2 sub-components
+    mod._auth_scheme_enforcer = _NoopAsync()
+    mod._password_reset = _NoopAsync()
+    mod._credential_transport = _NoopAsync()
+    mod._token_storage = _NoopAsync()
+    mod._registration_tester = _NoopAsync()
+    mod._mfa_tester = _NoopAsync()
     return mod
 
 

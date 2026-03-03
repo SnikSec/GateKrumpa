@@ -14,6 +14,12 @@ from krumpa.redteef.payload_builder import PayloadBuilder, ProofPayload
 from krumpa.redteef.blind_sqli import BlindSqliConfirmer
 from krumpa.redteef.env_payloads import EnvironmentPayloadSelector
 from krumpa.redteef.error_sqli import ErrorSqliConfirmer
+from krumpa.redteef.path_traversal_confirmer import PathTraversalConfirmer
+from krumpa.redteef.open_redirect_confirmer import OpenRedirectConfirmer
+from krumpa.redteef.blind_xss_confirmer import BlindXssConfirmer
+from krumpa.redteef.ssrf_confirmer import SsrfConfirmer
+from krumpa.redteef.xxe_confirmer import XxeConfirmer
+from krumpa.redteef.evidence_scoring import EvidenceScorer
 
 logger = logging.getLogger("krumpa.redteef")
 
@@ -42,6 +48,12 @@ class RedTeefModule(BaseModule):
         self._blind_sqli = BlindSqliConfirmer(http_client=http_client)
         self._error_sqli = ErrorSqliConfirmer(http_client=http_client)
         self._env_selector = EnvironmentPayloadSelector()
+        self._path_traversal = PathTraversalConfirmer(http_client=http_client)
+        self._open_redirect = OpenRedirectConfirmer(http_client=http_client)
+        self._blind_xss = BlindXssConfirmer(http_client=http_client)
+        self._ssrf = SsrfConfirmer(http_client=http_client)
+        self._xxe = XxeConfirmer(http_client=http_client)
+        self._evidence_scorer = EvidenceScorer()
 
     async def setup(self, ctx: ScanContext) -> None:
         """Wire shared HTTP client into confirmer if no explicit client."""
@@ -52,6 +64,16 @@ class RedTeefModule(BaseModule):
             self._blind_sqli._owns_client = False
             self._error_sqli._client = ctx.http_client
             self._error_sqli._owns_client = False
+            self._path_traversal._client = ctx.http_client
+            self._path_traversal._owns_client = False
+            self._open_redirect._client = ctx.http_client
+            self._open_redirect._owns_client = False
+            self._blind_xss._client = ctx.http_client
+            self._blind_xss._owns_client = False
+            self._ssrf._client = ctx.http_client
+            self._ssrf._owns_client = False
+            self._xxe._client = ctx.http_client
+            self._xxe._owns_client = False
 
     # ------------------------------------------------------------------
     # Module lifecycle
@@ -122,6 +144,48 @@ class RedTeefModule(BaseModule):
                     target, inject_field=self._infer_field(finding),
                 )
                 findings.extend(error_findings)
+
+            # Path traversal confirmation
+            if vuln_type in ("path-traversal", "lfi", "file-inclusion"):
+                pt_findings = await self._path_traversal.confirm(
+                    target, inject_field=inject_field,
+                )
+                findings.extend(pt_findings)
+
+            # Open redirect confirmation
+            if vuln_type in ("open-redirect", "redirect"):
+                or_findings = await self._open_redirect.confirm(
+                    target, inject_field=inject_field,
+                )
+                findings.extend(or_findings)
+
+            # Blind XSS confirmation
+            if vuln_type in ("xss", "stored-xss", "blind-xss"):
+                xss_findings = await self._blind_xss.confirm(
+                    target, inject_field=inject_field,
+                )
+                findings.extend(xss_findings)
+
+            # SSRF confirmation
+            if vuln_type in ("ssrf", "server-side-request-forgery"):
+                ssrf_findings = await self._ssrf.confirm(
+                    target, inject_field=inject_field,
+                )
+                findings.extend(ssrf_findings)
+
+            # XXE confirmation
+            if vuln_type in ("xxe", "xml-external-entity"):
+                xxe_findings = await self._xxe.confirm(
+                    target, inject_field=inject_field,
+                )
+                findings.extend(xxe_findings)
+
+        # --- Score and rank all findings by evidence quality ---------------
+        scored = self._evidence_scorer.batch_score(findings)
+        logger.info(
+            "Evidence scoring: %d findings scored, %d above threshold",
+            len(findings), len(scored),
+        )
 
         for f in findings:
             self.add_finding(f)
