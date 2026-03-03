@@ -20,6 +20,8 @@ from krumpa.waaaghlogic.input_length_boundary import InputLengthBoundaryTester
 from krumpa.waaaghlogic.bulk_operation_abuse import BulkOperationTester
 from krumpa.waaaghlogic.state_machine import StateMachineTester
 from krumpa.waaaghlogic.graphql_logic import GraphqlLogicTester
+from krumpa.waaaghlogic.workflow_integrity import WorkflowIntegrityTester
+from krumpa.waaaghlogic.currency_rounding import CurrencyRoundingTester
 
 logger = logging.getLogger("krumpa.waaaghlogic")
 
@@ -51,6 +53,8 @@ class WaaaghLogicModule(BaseModule):
         self._bulk_ops = BulkOperationTester()
         self._state_machine = StateMachineTester()
         self._graphql_logic = GraphqlLogicTester()
+        self._workflow_integrity = WorkflowIntegrityTester()
+        self._currency_rounding = CurrencyRoundingTester()
         self._workflows = workflows or []
         self._idempotency_targets = idempotency_targets or []
 
@@ -81,6 +85,10 @@ class WaaaghLogicModule(BaseModule):
             self._state_machine._owns_client = False
             self._graphql_logic._client = ctx.http_client
             self._graphql_logic._owns_client = False
+            self._workflow_integrity._client = ctx.http_client
+            self._workflow_integrity._owns_client = False
+            self._currency_rounding._client = ctx.http_client
+            self._currency_rounding._owns_client = False
 
     async def run(self, ctx: ScanContext) -> List[Finding]:
         findings: List[Finding] = []
@@ -198,6 +206,26 @@ class WaaaghLogicModule(BaseModule):
             logger.info("Testing GraphQL logic on %s", target.url)
             gql_findings = await self._graphql_logic.test(target)
             findings.extend(gql_findings)
+
+        # --- Workflow integrity (payment-specific) -------------------------
+        for target in ctx.targets:
+            if any(h in target.url.lower() for h in (
+                "/checkout", "/payment", "/pay", "/order", "/cart",
+                "/purchase", "/subscribe", "/billing",
+            )):
+                logger.info("Testing workflow integrity on %s", target.url)
+                wi_findings = await self._workflow_integrity.analyze(target)
+                findings.extend(wi_findings)
+
+        # --- Currency rounding exploitation --------------------------------
+        for target in ctx.targets:
+            if any(h in target.url.lower() for h in (
+                "/price", "/amount", "/total", "/order", "/checkout",
+                "/payment", "/cart", "/invoice", "/billing",
+            )):
+                logger.info("Testing currency rounding on %s", target.url)
+                cr_findings = await self._currency_rounding.analyze(target)
+                findings.extend(cr_findings)
 
         for f in findings:
             self.add_finding(f)

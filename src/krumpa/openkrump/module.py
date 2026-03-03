@@ -23,6 +23,11 @@ from krumpa.openkrump.spec_discovery import SpecDiscovery
 from krumpa.openkrump.security_scheme_enforcer import SecuritySchemeEnforcer
 from krumpa.openkrump.param_constraint_tester import ParamConstraintTester
 from krumpa.openkrump.spec_diff import SpecDiffChecker
+from krumpa.openkrump.grpc_protobuf import GrpcProtobufAnalyzer
+from krumpa.openkrump.example_tester import ExampleTester
+from krumpa.openkrump.api_versioning import ApiVersioningDetector
+from krumpa.openkrump.webhook_security import WebhookSecurityAnalyzer
+from krumpa.openkrump.validation_gaps import ValidationGapDetector
 
 logger = logging.getLogger("krumpa.openkrump")
 
@@ -57,6 +62,11 @@ class OpenKrumpModule(BaseModule):
         self._sec_enforcer = SecuritySchemeEnforcer(http_client=http_client)
         self._param_tester = ParamConstraintTester(http_client=http_client)
         self._spec_diff = SpecDiffChecker(http_client=http_client)
+        self._grpc = GrpcProtobufAnalyzer()
+        self._example_tester = ExampleTester()
+        self._api_versioning = ApiVersioningDetector()
+        self._webhook_security = WebhookSecurityAnalyzer()
+        self._validation_gaps = ValidationGapDetector()
         self._client = http_client
         self._explicit_client = http_client is not None
         self._owns_client = http_client is None
@@ -80,6 +90,16 @@ class OpenKrumpModule(BaseModule):
             self._param_tester._owns_client = False
             self._spec_diff._client = ctx.http_client
             self._spec_diff._owns_client = False
+            self._grpc._client = ctx.http_client
+            self._grpc._owns_client = False
+            self._example_tester._client = ctx.http_client
+            self._example_tester._owns_client = False
+            self._api_versioning._client = ctx.http_client
+            self._api_versioning._owns_client = False
+            self._webhook_security._client = ctx.http_client
+            self._webhook_security._owns_client = False
+            self._validation_gaps._client = ctx.http_client
+            self._validation_gaps._owns_client = False
 
     # ------------------------------------------------------------------
     # Module lifecycle
@@ -250,6 +270,32 @@ class OpenKrumpModule(BaseModule):
             # 13. Spec diff / shadow API detection — deployed vs. spec comparison
             diff_findings = await self._spec_diff.diff(spec, self.endpoints, base)
             findings.extend(diff_findings)
+
+            # 14. gRPC / Protobuf analysis — reflection, unauth access, transport
+            for target in ctx.targets:
+                grpc_findings = await self._grpc.analyze(target)
+                findings.extend(grpc_findings)
+
+            # 15. Example-based testing — execute spec examples and verify
+            first_target = Target(url=base, method="GET") if ctx.targets else None
+            if first_target:
+                example_findings = await self._example_tester.analyze(first_target, spec)
+                findings.extend(example_findings)
+
+            # 16. API versioning — enumerate and check deprecated versions
+            for target in ctx.targets:
+                ver_findings = await self._api_versioning.analyze(target)
+                findings.extend(ver_findings)
+
+            # 17. Webhook security — SSRF, signature bypass, replay attacks
+            for target in ctx.targets:
+                webhook_findings = await self._webhook_security.analyze(target)
+                findings.extend(webhook_findings)
+
+            # 18. Validation gap detection — negative tests from spec constraints
+            if first_target:
+                gap_findings = await self._validation_gaps.analyze(first_target, spec)
+                findings.extend(gap_findings)
 
         finally:
             if owns_temp_client:

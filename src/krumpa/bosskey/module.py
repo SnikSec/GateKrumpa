@@ -24,6 +24,9 @@ from krumpa.bosskey.credential_transport import CredentialTransportAuditor
 from krumpa.bosskey.token_storage import TokenStorageAnalyzer
 from krumpa.bosskey.registration_tester import RegistrationTester
 from krumpa.bosskey.mfa_tester import MfaTester
+from krumpa.bosskey.saml_analyzer import SamlAnalyzer
+from krumpa.bosskey.remember_me import RememberMeAnalyzer
+from krumpa.bosskey.concurrent_sessions import ConcurrentSessionTester
 
 logger = logging.getLogger("krumpa.bosskey")
 
@@ -59,6 +62,9 @@ class BossKeyModule(BaseModule):
         self._token_storage = TokenStorageAnalyzer()
         self._registration_tester = RegistrationTester()
         self._mfa_tester = MfaTester()
+        self._saml_analyzer = SamlAnalyzer()
+        self._remember_me = RememberMeAnalyzer()
+        self._concurrent_sessions = ConcurrentSessionTester()
         self._login_endpoints = login_endpoints or []
 
     async def setup(self, ctx: ScanContext) -> None:
@@ -92,6 +98,12 @@ class BossKeyModule(BaseModule):
             self._registration_tester._owns_client = False
             self._mfa_tester._client = ctx.http_client
             self._mfa_tester._owns_client = False
+            self._saml_analyzer._client = ctx.http_client
+            self._saml_analyzer._owns_client = False
+            self._remember_me._client = ctx.http_client
+            self._remember_me._owns_client = False
+            self._concurrent_sessions._client = ctx.http_client
+            self._concurrent_sessions._owns_client = False
 
     async def run(self, ctx: ScanContext) -> List[Finding]:
         findings: List[Finding] = []
@@ -210,6 +222,25 @@ class BossKeyModule(BaseModule):
             logger.info("Testing MFA on %s", target.url)
             mfa_findings = await self._mfa_tester.test(target)
             findings.extend(mfa_findings)
+
+        # --- SAML analysis on SAML endpoints --------------------------------
+        for target in ctx.targets:
+            if any(h in target.url.lower() for h in ("/saml", "/sso", "/sls", "/acs")):
+                logger.info("Analysing SAML on %s", target.url)
+                saml_findings = await self._saml_analyzer.analyze(target)
+                findings.extend(saml_findings)
+
+        # --- Remember-me token analysis ------------------------------------
+        for target in login_urls:
+            logger.info("Analysing remember-me tokens on %s", target.url)
+            remember_findings = await self._remember_me.analyze(target)
+            findings.extend(remember_findings)
+
+        # --- Concurrent session testing ------------------------------------
+        for target in login_urls:
+            logger.info("Testing concurrent sessions on %s", target.url)
+            concurrent_findings = await self._concurrent_sessions.analyze(target)
+            findings.extend(concurrent_findings)
 
         for f in findings:
             self.add_finding(f)

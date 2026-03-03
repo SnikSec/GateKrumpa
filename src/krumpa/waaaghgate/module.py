@@ -19,6 +19,7 @@ from krumpa.waaaghgate.webhook_notifier import WebhookNotifier, WebhookConfig
 from krumpa.waaaghgate.finding_lifecycle import FindingLifecycleManager
 from krumpa.waaaghgate.trend_tracker import TrendTracker
 from krumpa.waaaghgate.sla_enforcer import SlaEnforcer
+from krumpa.waaaghgate.badge_generator import BadgeGenerator
 
 logger = logging.getLogger("krumpa.waaaghgate")
 
@@ -64,6 +65,7 @@ class WaaaghGateModule(BaseModule):
         self._sla = SlaEnforcer(
             policy=None,  # uses defaults; override via sla_config
         )
+        self._badge_gen = BadgeGenerator()
         self._project_root = project_root
         self.gate_result: Optional[GateResult] = None
         self.reports: Dict[ReportFormat, str] = {}
@@ -166,5 +168,14 @@ class WaaaghGateModule(BaseModule):
         ctx.metadata["suppressed_count"] = suppression_result.suppressed_count
         ctx.metadata["lifecycle"] = self.lifecycle_result
         ctx.metadata["sla_breaches"] = len(self.sla_breaches)
+
+        # 11. Badge generation — shields.io-compatible SVG badges
+        badge_svg = self._badge_gen.generate(active_findings)
+        ctx.metadata["badge_svg"] = badge_svg
+        detailed_badges = self._badge_gen.generate_detailed(active_findings)
+        ctx.metadata["badge_detailed"] = detailed_badges
+        if self.gate_result:
+            gate_badge = self._badge_gen.generate_gate_badge(self.gate_result.passed)
+            ctx.metadata["badge_gate"] = gate_badge
 
         return []  # no new findings
