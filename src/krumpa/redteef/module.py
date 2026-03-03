@@ -23,6 +23,7 @@ from krumpa.redteef.evidence_scoring import EvidenceScorer
 from krumpa.redteef.deserialization_confirmer import DeserializationConfirmer
 from krumpa.redteef.polyglot_payloads import PolyglotPayloadTester
 from krumpa.redteef.regression_canaries import RegressionCanaryChecker
+from krumpa.redteef.exploit_chains import ExploitChainBuilder
 
 logger = logging.getLogger("krumpa.redteef")
 
@@ -60,6 +61,7 @@ class RedTeefModule(BaseModule):
         self._deser_confirmer = DeserializationConfirmer(http_client=http_client)
         self._polyglot = PolyglotPayloadTester(http_client=http_client)
         self._regression = RegressionCanaryChecker(http_client=http_client)
+        self._exploit_chains = ExploitChainBuilder()
 
     async def setup(self, ctx: ScanContext) -> None:
         """Wire shared HTTP client into confirmer if no explicit client."""
@@ -86,6 +88,8 @@ class RedTeefModule(BaseModule):
             self._polyglot._owns_client = False
             self._regression._client = ctx.http_client
             self._regression._owns_client = False
+            self._exploit_chains._client = ctx.http_client
+            self._exploit_chains._owns_client = False
 
     # ------------------------------------------------------------------
     # Module lifecycle
@@ -217,6 +221,14 @@ class RedTeefModule(BaseModule):
             "Evidence scoring: %d findings scored, %d above threshold",
             len(findings), len(scored),
         )
+
+        # --- Multi-step exploit chain analysis ----------------------------
+        if ctx.targets:
+            first_target = ctx.targets[0]
+            chain_findings = await self._exploit_chains.analyze(
+                first_target, findings + ctx.findings,
+            )
+            findings.extend(chain_findings)
 
         for f in findings:
             self.add_finding(f)

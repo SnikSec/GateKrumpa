@@ -31,6 +31,7 @@ from krumpa.grotassault.unicode_normalization import UnicodeNormalizationChecker
 from krumpa.grotassault.content_type_fuzzer import ContentTypeAwareFuzzer
 from krumpa.grotassault.response_fingerprint import ResponseFingerprinter
 from krumpa.grotassault.payload_db import PayloadDB
+from krumpa.grotassault.websocket_fuzzer import WebSocketFuzzer
 
 logger = logging.getLogger("krumpa.grotassault")
 
@@ -84,6 +85,7 @@ class GrotAssaultModule(BaseModule):
         self._ct_aware_fuzzer = ContentTypeAwareFuzzer(http_client=http_client)
         self._resp_fingerprinter = ResponseFingerprinter()
         self._payload_db = PayloadDB()
+        self._websocket_fuzzer = WebSocketFuzzer()
 
     async def setup(self, ctx: ScanContext) -> None:
         """Wire shared HTTP client into fuzzer and sub-checkers if no explicit client."""
@@ -124,6 +126,8 @@ class GrotAssaultModule(BaseModule):
             self._unicode_norm._owns_client = False
             self._ct_aware_fuzzer._client = ctx.http_client
             self._ct_aware_fuzzer._owns_client = False
+            self._websocket_fuzzer._client = ctx.http_client
+            self._websocket_fuzzer._owns_client = False
 
     # ------------------------------------------------------------------
     # Module lifecycle
@@ -268,6 +272,12 @@ class GrotAssaultModule(BaseModule):
             logger.info("Response fingerprinting across %d targets", len(ctx.targets))
             fp_findings = self._resp_fingerprinter.analyze(ctx.targets)
             findings.extend(fp_findings)
+
+        # 21. WebSocket fuzzing — message injection, CSWSH
+        for target in ctx.targets:
+            logger.info("WebSocket fuzzing %s", target.url)
+            ws_findings = await self._websocket_fuzzer.check(target)
+            findings.extend(ws_findings)
 
         for f in findings:
             self.add_finding(f)
