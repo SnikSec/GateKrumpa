@@ -64,6 +64,14 @@ class _NoopBlindOob:
         return []
 
 
+class _NoopSync:
+    """Stub whose methods return [] synchronously."""
+    def __getattr__(self, name):
+        def _noop(*a, **kw):
+            return []
+        return _noop
+
+
 def _neutralise_new_components(module: GrotAssaultModule) -> None:
     """Disable Phase 1-4 sub-components so they don't make real requests."""
     noop = _NoopAsync()
@@ -80,6 +88,12 @@ def _neutralise_new_components(module: GrotAssaultModule) -> None:
     module._ldap_checker = noop
     module._proto_pollution = noop
     module._param_pollution = noop
+    # Phase 3 sub-components
+    module._graphql_fuzzer = noop
+    module._cache_poison = noop
+    module._unicode_norm = noop
+    module._ct_aware_fuzzer = noop
+    module._resp_fingerprinter = _NoopSync()  # sync class — analyze() returns []
 
 
 def _make_module(**kw) -> GrotAssaultModule:

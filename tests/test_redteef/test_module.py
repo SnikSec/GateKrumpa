@@ -51,6 +51,10 @@ def _make_redteef(http_client=None) -> RedTeefModule:
     mod = RedTeefModule(http_client=http_client)
     mod._blind_sqli = _NoopAsync()
     mod._env_selector = _FakeEnvSelector()
+    # Phase 3 sub-components
+    mod._deser_confirmer = _NoopAsync()
+    mod._polyglot = _NoopAsync()
+    mod._regression = _NoopAsync()
     return mod
 
 

@@ -20,6 +20,9 @@ from krumpa.redteef.blind_xss_confirmer import BlindXssConfirmer
 from krumpa.redteef.ssrf_confirmer import SsrfConfirmer
 from krumpa.redteef.xxe_confirmer import XxeConfirmer
 from krumpa.redteef.evidence_scoring import EvidenceScorer
+from krumpa.redteef.deserialization_confirmer import DeserializationConfirmer
+from krumpa.redteef.polyglot_payloads import PolyglotPayloadTester
+from krumpa.redteef.regression_canaries import RegressionCanaryChecker
 
 logger = logging.getLogger("krumpa.redteef")
 
@@ -54,6 +57,9 @@ class RedTeefModule(BaseModule):
         self._ssrf = SsrfConfirmer(http_client=http_client)
         self._xxe = XxeConfirmer(http_client=http_client)
         self._evidence_scorer = EvidenceScorer()
+        self._deser_confirmer = DeserializationConfirmer(http_client=http_client)
+        self._polyglot = PolyglotPayloadTester(http_client=http_client)
+        self._regression = RegressionCanaryChecker(http_client=http_client)
 
     async def setup(self, ctx: ScanContext) -> None:
         """Wire shared HTTP client into confirmer if no explicit client."""
@@ -74,6 +80,12 @@ class RedTeefModule(BaseModule):
             self._ssrf._owns_client = False
             self._xxe._client = ctx.http_client
             self._xxe._owns_client = False
+            self._deser_confirmer._client = ctx.http_client
+            self._deser_confirmer._owns_client = False
+            self._polyglot._client = ctx.http_client
+            self._polyglot._owns_client = False
+            self._regression._client = ctx.http_client
+            self._regression._owns_client = False
 
     # ------------------------------------------------------------------
     # Module lifecycle
@@ -179,6 +191,25 @@ class RedTeefModule(BaseModule):
                     target, inject_field=inject_field,
                 )
                 findings.extend(xxe_findings)
+
+            # Deserialization confirmation
+            if vuln_type in ("deserialization", "insecure-deserialization"):
+                deser_findings = await self._deser_confirmer.confirm(
+                    target, inject_field=inject_field,
+                )
+                findings.extend(deser_findings)
+
+            # Polyglot payload testing (covers multiple vuln classes)
+            if not result.confirmed:
+                poly_findings = await self._polyglot.test(
+                    target, inject_field=inject_field,
+                    vuln_classes=[vuln_type],
+                )
+                findings.extend(poly_findings)
+
+        # --- Regression canary checks — re-confirm previous findings ----
+        regression_findings = await self._regression.reconfirm_all()
+        findings.extend(regression_findings)
 
         # --- Score and rank all findings by evidence quality ---------------
         scored = self._evidence_scorer.batch_score(findings)
