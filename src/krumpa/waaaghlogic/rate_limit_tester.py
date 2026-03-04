@@ -145,7 +145,7 @@ class RateLimitTester(HttpClientMixin):
 
         for outcome in outcomes:
             result.total_sent += 1
-            if isinstance(outcome, Exception):
+            if isinstance(outcome, BaseException):
                 result.error_count += 1
                 continue
             code: int = outcome
