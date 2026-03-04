@@ -526,6 +526,80 @@ def export_cmd(input_path: str, fmt: str, output: Optional[str]) -> None:
 
 
 # ------------------------------------------------------------------
+# generate-sdk command
+# ------------------------------------------------------------------
+
+@cli.command("generate-sdk")
+@click.option("--spec", "-s", "spec_path", required=True, help="Path or URL to OpenAPI/Swagger spec (JSON/YAML).")
+@click.option("--output", "-o", default=None, help="Output file (default: stdout).")
+@click.option("--class-name", default="ApiClient", help="Name for the generated client class.")
+@click.option("--base-url", default=None, help="Override the base URL from the spec.")
+def generate_sdk_cmd(
+    spec_path: str,
+    output: Optional[str],
+    class_name: str,
+    base_url: Optional[str],
+) -> None:
+    """Generate a typed Python SDK client from an OpenAPI/Swagger spec."""
+    from krumpa.openkrump.parser import SpecParser
+    from krumpa.openkrump.sdk_generator import generate_sdk
+
+    # Load spec
+    spec_data = _load_spec(spec_path)
+
+    # Parse
+    parser = SpecParser(base_url=base_url)
+    endpoints = parser.parse(spec_data)
+
+    if not endpoints:
+        click.echo("No endpoints found in the spec.", err=True)
+        raise SystemExit(1)
+
+    resolved_base = base_url or parser.resolve_url(spec_data, "")
+    code = generate_sdk(
+        spec_data,
+        endpoints,
+        resolved_base,
+        class_name=class_name,
+    )
+
+    click.echo(f"Generated SDK: {class_name} with {len(endpoints)} method(s)")
+    if output:
+        Path(output).write_text(code, encoding="utf-8")
+        click.echo(f"Written to: {output}")
+    else:
+        click.echo(code)
+
+
+def _load_spec(spec_path: str) -> dict:
+    """Load an OpenAPI spec from a file path or URL."""
+    if spec_path.startswith(("http://", "https://")):
+        import httpx
+        resp = httpx.get(spec_path, follow_redirects=True, timeout=30)
+        resp.raise_for_status()
+        if spec_path.endswith((".yaml", ".yml")):
+            try:
+                import yaml  # type: ignore[import-untyped]
+                return yaml.safe_load(resp.text)  # type: ignore[no-any-return]
+            except ImportError:
+                raise click.UsageError("PyYAML is required to parse YAML specs. Install it with: pip install pyyaml")
+        return resp.json()  # type: ignore[no-any-return]
+
+    p = Path(spec_path)
+    if not p.exists():
+        raise click.BadParameter(f"Spec file not found: {spec_path}")
+
+    text = p.read_text(encoding="utf-8")
+    if spec_path.endswith((".yaml", ".yml")):
+        try:
+            import yaml  # type: ignore[import-untyped]
+            return yaml.safe_load(text)  # type: ignore[no-any-return]
+        except ImportError:
+            raise click.UsageError("PyYAML is required to parse YAML specs. Install it with: pip install pyyaml")
+    return json.loads(text)  # type: ignore[no-any-return]
+
+
+# ------------------------------------------------------------------
 # Entry-point
 # ------------------------------------------------------------------
 
