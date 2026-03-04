@@ -12,12 +12,12 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.grotassault.xxe")
 
@@ -128,7 +128,7 @@ _ERROR_LEAK_PATTERNS = [
 # ---------------------------------------------------------------------------
 
 @dataclass
-class XxeResult:
+class XxeResult(HttpClientMixin):
     """Result of a single XXE payload attempt."""
     payload_type: str
     status_code: int
@@ -138,7 +138,7 @@ class XxeResult:
     error_leaked: bool = False
 
 
-class XxeChecker:
+class XxeChecker(HttpClientMixin):
     """Test endpoints for XML External Entity vulnerabilities.
 
     Parameters

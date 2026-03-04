@@ -23,12 +23,12 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.redteef.error_sqli")
 
@@ -38,7 +38,7 @@ logger = logging.getLogger("krumpa.redteef.error_sqli")
 # ------------------------------------------------------------------
 
 @dataclass(frozen=True)
-class DbErrorSignature:
+class DbErrorSignature(HttpClientMixin):
     """A DBMS-specific error pattern."""
     dbms: str
     pattern: re.Pattern[str]
@@ -100,7 +100,7 @@ _ERROR_PROBES: List[str] = [
 ]
 
 
-class ErrorSqliConfirmer:
+class ErrorSqliConfirmer(HttpClientMixin):
     """Confirm SQL injection via database error extraction."""
 
     def __init__(

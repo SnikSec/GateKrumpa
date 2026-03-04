@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import urljoin
 
 from krumpa.core import Finding, Severity, Target
+from krumpa.core.http_client import HttpClientMixin
 
 logger = logging.getLogger("krumpa.openkrump.example_tester")
 
@@ -45,7 +46,7 @@ class ExampleTestResult:
     response_body: str = ""
 
 
-class ExampleTester:
+class ExampleTester(HttpClientMixin):
     """Run spec-defined examples as positive test cases.
 
     OpenAPI specs can include `example` / `examples` at multiple levels

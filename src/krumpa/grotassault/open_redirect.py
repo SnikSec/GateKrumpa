@@ -7,9 +7,10 @@ Tests for open redirect vulnerabilities in URL parameters.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, List
 
 from krumpa.core import Finding, Severity, Target
+from krumpa.core.http_client import HttpClientMixin
 
 logger = logging.getLogger("krumpa.grotassault.open_redirect")
 
@@ -35,7 +36,7 @@ _REDIRECT_PAYLOADS = [
 ]
 
 
-class OpenRedirectChecker:
+class OpenRedirectChecker(HttpClientMixin):
     """Test for open redirect vulnerabilities."""
 
     def __init__(self, http_client: Any = None) -> None:

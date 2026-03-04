@@ -10,6 +10,7 @@ from typing import Any, List, Optional
 from urllib.parse import urlparse
 
 from krumpa.core import Finding, Severity, Target
+from krumpa.core.http_client import HttpClientMixin
 
 
 # ------------------------------------------------------------------
@@ -103,7 +104,7 @@ WS_AUTH_BYPASS_ORIGINS = [
 ]
 
 
-class WebSocketFuzzer:
+class WebSocketFuzzer(HttpClientMixin):
     """Fuzz WebSocket endpoints for security vulnerabilities.
 
     Tests:

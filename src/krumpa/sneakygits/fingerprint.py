@@ -17,7 +17,7 @@ from typing import Dict, List, Optional, Set
 
 import httpx
 
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.sneakygits.fingerprint")
 
@@ -27,7 +27,7 @@ logger = logging.getLogger("krumpa.sneakygits.fingerprint")
 # ------------------------------------------------------------------
 
 @dataclass(frozen=True)
-class _Signature:
+class _Signature(HttpClientMixin):
     """A single fingerprint rule."""
     name: str
     category: str  # e.g. "server", "framework", "cms", "js-lib", "cdn"
@@ -154,7 +154,7 @@ _SIGNATURES: List[_Signature] = [
 ]
 
 
-class Fingerprinter:
+class Fingerprinter(HttpClientMixin):
     """
     Identify technologies running on a target by probing its HTTP responses.
 

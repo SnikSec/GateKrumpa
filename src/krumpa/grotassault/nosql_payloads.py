@@ -12,11 +12,11 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.grotassault.nosql")
 
@@ -26,7 +26,7 @@ logger = logging.getLogger("krumpa.grotassault.nosql")
 # ------------------------------------------------------------------
 
 @dataclass
-class NoSqlPayload:
+class NoSqlPayload(HttpClientMixin):
     """A single NoSQL injection payload."""
     label: str
     value: Any
@@ -103,7 +103,7 @@ _ERROR_PATTERNS: List[str] = [
 # Checker class
 # ------------------------------------------------------------------
 
-class NoSqlChecker:
+class NoSqlChecker(HttpClientMixin):
     """
     Test endpoints for NoSQL injection by injecting operator / JS payloads
     and observing differences in responses.
@@ -129,7 +129,7 @@ class NoSqlChecker:
         # Operator injection into JSON body fields
         if target.method.upper() in ("POST", "PUT", "PATCH"):
             body = self._parse_body(target)
-            if body and isinstance(body, dict):
+            if body:
                 findings.extend(await self._test_body_injection(target, body))
 
             # Auth bypass patterns on login-like endpoints

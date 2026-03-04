@@ -21,7 +21,7 @@ from typing import Any, Dict, List, Optional
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.grotassault.prototype_pollution")
 
@@ -62,7 +62,7 @@ _POLLUTION_PAYLOADS: List[Dict[str, Any]] = [
 ]
 
 
-class PrototypePollutionChecker:
+class PrototypePollutionChecker(HttpClientMixin):
     """Test JSON endpoints for prototype pollution vulnerabilities."""
 
     def __init__(

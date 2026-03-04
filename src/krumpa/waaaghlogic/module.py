@@ -61,34 +61,20 @@ class WaaaghLogicModule(BaseModule):
     async def setup(self, ctx: ScanContext) -> None:
         """Wire shared HTTP client into sub-components."""
         if ctx.http_client:
-            self._flow_analyzer._client = ctx.http_client
-            self._flow_analyzer._owns_client = False
-            self._idempotency_checker._client = ctx.http_client
-            self._idempotency_checker._owns_client = False
-            self._mass_assignment._client = ctx.http_client
-            self._mass_assignment._owns_client = False
-            self._file_upload._client = ctx.http_client
-            self._file_upload._owns_client = False
-            self._privesc._client = ctx.http_client
-            self._privesc._owns_client = False
-            self._pagination._client = ctx.http_client
-            self._pagination._owns_client = False
-            self._data_validation._client = ctx.http_client
-            self._data_validation._owns_client = False
-            self._numeric_precision._client = ctx.http_client
-            self._numeric_precision._owns_client = False
-            self._input_length._client = ctx.http_client
-            self._input_length._owns_client = False
-            self._bulk_ops._client = ctx.http_client
-            self._bulk_ops._owns_client = False
-            self._state_machine._client = ctx.http_client
-            self._state_machine._owns_client = False
-            self._graphql_logic._client = ctx.http_client
-            self._graphql_logic._owns_client = False
-            self._workflow_integrity._client = ctx.http_client
-            self._workflow_integrity._owns_client = False
-            self._currency_rounding._client = ctx.http_client
-            self._currency_rounding._owns_client = False
+            self._flow_analyzer.set_client(ctx.http_client)
+            self._idempotency_checker.set_client(ctx.http_client)
+            self._mass_assignment.set_client(ctx.http_client)
+            self._file_upload.set_client(ctx.http_client)
+            self._privesc.set_client(ctx.http_client)
+            self._pagination.set_client(ctx.http_client)
+            self._data_validation.set_client(ctx.http_client)
+            self._numeric_precision.set_client(ctx.http_client)
+            self._input_length.set_client(ctx.http_client)
+            self._bulk_ops.set_client(ctx.http_client)
+            self._state_machine.set_client(ctx.http_client)
+            self._graphql_logic.set_client(ctx.http_client)
+            self._workflow_integrity.set_client(ctx.http_client)
+            self._currency_rounding.set_client(ctx.http_client)
 
     async def run(self, ctx: ScanContext) -> List[Finding]:
         findings: List[Finding] = []

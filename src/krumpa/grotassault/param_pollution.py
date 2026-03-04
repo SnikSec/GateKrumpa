@@ -17,12 +17,12 @@ from __future__ import annotations
 
 import logging
 from typing import Any, Dict, List, Optional
-from urllib.parse import parse_qs, urlencode, urljoin, urlparse, urlunparse
+from urllib.parse import parse_qs, urlparse, urlunparse
 
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.grotassault.param_pollution")
 
@@ -47,7 +47,7 @@ _HPP_PROBES: List[Dict[str, Any]] = [
 ]
 
 
-class ParamPollutionChecker:
+class ParamPollutionChecker(HttpClientMixin):
     """Test endpoints for HTTP Parameter Pollution vulnerabilities."""
 
     def __init__(

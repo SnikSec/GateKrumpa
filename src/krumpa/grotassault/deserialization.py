@@ -12,10 +12,11 @@ Generates payloads targeting insecure deserialization in:
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass
+from typing import Any, List, Optional
 
 from krumpa.core import Finding, Severity, Target
+from krumpa.core.http_client import HttpClientMixin
 
 logger = logging.getLogger("krumpa.grotassault.deserialization")
 
@@ -114,7 +115,7 @@ ALL_DESER_PAYLOADS: List[DeserPayload] = (
 )
 
 
-class DeserializationChecker:
+class DeserializationChecker(HttpClientMixin):
     """Test for insecure deserialization vulnerabilities."""
 
     def __init__(self, http_client: Any = None) -> None:
@@ -141,7 +142,7 @@ class DeserializationChecker:
                 resp = await self._client.request(
                     method=target.method or "POST",
                     url=target.url,
-                    content=payload.payload.encode(),
+                    body=payload.payload.encode(),
                     headers={"Content-Type": payload.content_type},
                 )
 

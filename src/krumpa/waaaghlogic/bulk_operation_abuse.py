@@ -11,13 +11,12 @@ CWE-799: Improper Control of Interaction Frequency
 from __future__ import annotations
 
 import logging
-import time
 from typing import Any, Dict, List, Optional
 
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.waaaghlogic.bulk_operation_abuse")
 
@@ -54,7 +53,7 @@ _BULK_EXPORT_PAYLOADS: List[Dict[str, Any]] = [
 ]
 
 
-class BulkOperationTester:
+class BulkOperationTester(HttpClientMixin):
     """
     Test endpoints for bulk operation abuse:
       1. Unbounded batch delete

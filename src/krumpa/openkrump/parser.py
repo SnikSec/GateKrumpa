@@ -134,7 +134,7 @@ class SpecParser:
             if media_type in content:
                 return content[media_type].get("schema")
         # Return first available
-        for mt, mt_obj in content.items():
+        for _mt, mt_obj in content.items():
             return mt_obj.get("schema")
         return None
 
@@ -145,7 +145,7 @@ class SpecParser:
             if not isinstance(resp_obj, dict):
                 continue
             content = resp_obj.get("content", {})
-            for mt, mt_obj in content.items():
+            for _mt, mt_obj in content.items():
                 schema = mt_obj.get("schema")
                 if schema:
                     result[str(status)] = schema

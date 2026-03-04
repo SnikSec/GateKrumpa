@@ -17,13 +17,13 @@ from typing import List, Optional
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.redteef.path_traversal_confirmer")
 
 
 @dataclass
-class TraversalPayload:
+class TraversalPayload(HttpClientMixin):
     """A single path traversal payload with expected canary."""
     label: str
     payload: str
@@ -77,7 +77,7 @@ _PAYLOADS: List[TraversalPayload] = [
 ]
 
 
-class PathTraversalConfirmer:
+class PathTraversalConfirmer(HttpClientMixin):
     """
     Confirm path traversal by:
       1. Injecting traversal payloads into identified parameters

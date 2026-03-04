@@ -9,10 +9,10 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.grotassault.crlf")
 
@@ -22,7 +22,7 @@ logger = logging.getLogger("krumpa.grotassault.crlf")
 # ------------------------------------------------------------------
 
 @dataclass
-class CrlfPayload:
+class CrlfPayload(HttpClientMixin):
     """A single CRLF / header injection payload."""
     label: str
     value: str
@@ -99,7 +99,7 @@ _REFLECTION_MARKERS = [
 # Checker class
 # ------------------------------------------------------------------
 
-class CrlfChecker:
+class CrlfChecker(HttpClientMixin):
     """
     Test endpoints for CRLF injection and HTTP response splitting.
     """

@@ -8,9 +8,10 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, List
 
 from krumpa.core import Finding, Severity, Target
+from krumpa.core.http_client import HttpClientMixin
 
 logger = logging.getLogger("krumpa.grotassault.content_type")
 
@@ -58,7 +59,7 @@ CONTENT_TYPE_PROBES: List[ContentTypeProbe] = [
 ]
 
 
-class ContentTypeSwitcher:
+class ContentTypeSwitcher(HttpClientMixin):
     """Test for parser confusion via content-type mismatches."""
 
     def __init__(self, http_client: Any = None) -> None:
@@ -77,7 +78,7 @@ class ContentTypeSwitcher:
                 resp = await self._client.request(
                     method=target.method or "POST",
                     url=target.url,
-                    content=probe.payload.encode(),
+                    body=probe.payload.encode(),
                     headers={"Content-Type": probe.switched_type},
                 )
 

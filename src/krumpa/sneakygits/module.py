@@ -61,28 +61,17 @@ class SneakyGitsModule(BaseModule):
         """Wire shared HTTP client into sub-components."""
         client = ctx.http_client
         if client:
-            self._crawler._client = client
-            self._crawler._owns_client = False
-            self._fingerprinter._client = client
-            self._fingerprinter._owns_client = False
-            self._header_auditor._client = client
-            self._header_auditor._owns_client = False
-            self._cors_checker._client = client
-            self._cors_checker._owns_client = False
-            self._content_discovery._client = client
-            self._content_discovery._owns_client = False
-            self._js_extractor._client = client
-            self._js_extractor._owns_client = False
-            self._waf_detector._client = client
-            self._waf_detector._owns_client = False
-            self._backup_scanner._client = client
-            self._backup_scanner._owns_client = False
-            self._method_discovery._client = client
-            self._method_discovery._owns_client = False
-            self._info_leakage._client = client
-            self._info_leakage._owns_client = False
-            self._dns_enum._client = client
-            self._dns_enum._owns_client = False
+            self._crawler.set_client(client)
+            self._fingerprinter.set_client(client)
+            self._header_auditor.set_client(client)
+            self._cors_checker.set_client(client)
+            self._content_discovery.set_client(client)
+            self._js_extractor.set_client(client)
+            self._waf_detector.set_client(client)
+            self._backup_scanner.set_client(client)
+            self._method_discovery.set_client(client)
+            self._info_leakage.set_client(client)
+            self._dns_enum.set_client(client)
 
         # Inject auth tokens into the crawler for authenticated crawling
         if ctx.auth_tokens:

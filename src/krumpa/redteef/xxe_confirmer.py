@@ -17,7 +17,7 @@ from typing import List, Optional
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.redteef.xxe_confirmer")
 
@@ -140,7 +140,7 @@ _EXPANSION_PAYLOADS = [
 ]
 
 
-class XxeConfirmer:
+class XxeConfirmer(HttpClientMixin):
     """
     Confirm XXE by:
       1. Classic entity injection (file:///etc/passwd, win.ini)

@@ -8,10 +8,11 @@ and attempts to overwrite them via API requests.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set
 
 from krumpa.core import Finding, Severity, Target
+from krumpa.core.http_client import HttpClientMixin
 
 logger = logging.getLogger("krumpa.openkrump.spec_mass_assignment")
 
@@ -42,7 +43,7 @@ class SpecMassAssignmentResult:
     response_value: Any = None
 
 
-class SpecMassAssignmentChecker:
+class SpecMassAssignmentChecker(HttpClientMixin):
     """
     Detect mass assignment vulnerabilities by extracting read-only field
     metadata from an OpenAPI spec and testing if those fields can be
@@ -56,8 +57,8 @@ class SpecMassAssignmentChecker:
         check_inferred: bool = True,
         check_admin_fields: bool = True,
     ) -> None:
-        self._http_client = http_client
-        self._owns_client = False
+        self._client = http_client
+        self._owns_client = http_client is None
         self._check_inferred = check_inferred
         self._check_admin_fields = check_admin_fields
 
@@ -129,17 +130,17 @@ class SpecMassAssignmentChecker:
         Attempt to set a read-only field via the API and check if it
         was accepted.
         """
-        if not self._http_client:
+        if not self._client:
             return None
 
         # Build payload with just the read-only field
         payload = {field_name: test_value}
 
         try:
-            resp = await self._http_client.request(
+            resp = await self._client.request(
                 method=target.method or "PUT",
                 url=target.url,
-                json=payload,
+                json_body=payload,
             )
 
             was_accepted = False

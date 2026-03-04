@@ -16,10 +16,11 @@ import hashlib
 import hmac
 import json
 import logging
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass
+from typing import Any, List, Optional
 
 from krumpa.core import Finding, Severity, Target
+from krumpa.core.http_client import HttpClientMixin
 
 logger = logging.getLogger("krumpa.bosskey.jwt_attacks")
 
@@ -34,7 +35,7 @@ class JwtAttackResult:
     status_code: int = 0
 
 
-class JwtAdvancedTester:
+class JwtAdvancedTester(HttpClientMixin):
     """Test JWT implementations for common vulnerabilities."""
 
     def __init__(self, http_client: Any = None) -> None:

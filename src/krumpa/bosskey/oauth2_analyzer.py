@@ -17,15 +17,14 @@ from __future__ import annotations
 
 import json
 import logging
-import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import urlparse
 
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.bosskey.oauth2")
 
@@ -45,7 +44,7 @@ _WELL_KNOWN_PATHS = [
 # ---------------------------------------------------------------------------
 
 @dataclass
-class OAuth2Config:
+class OAuth2Config(HttpClientMixin):
     """Parsed OAuth2 / OIDC server metadata."""
     authorization_endpoint: str = ""
     token_endpoint: str = ""
@@ -78,7 +77,7 @@ class OAuth2Config:
 # OAuth2Analyzer
 # ---------------------------------------------------------------------------
 
-class OAuth2Analyzer:
+class OAuth2Analyzer(HttpClientMixin):
     """Analyse OAuth2 / OIDC configurations for security weaknesses.
 
     Parameters

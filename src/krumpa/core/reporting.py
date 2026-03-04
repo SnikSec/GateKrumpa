@@ -10,7 +10,7 @@ import json
 import re
 from typing import Any, Dict, List
 
-from krumpa.core import Finding, ScanContext
+from krumpa.core import ScanContext
 
 # Patterns that should be redacted from evidence / description in reports
 _SENSITIVE_RE = re.compile(

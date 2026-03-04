@@ -13,13 +13,13 @@ import math
 import re
 import time
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import List, Optional
 from urllib.parse import parse_qs, urlparse
 
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ _TOKEN_LEAK_PATTERNS = [
 
 
 @dataclass
-class ResetTokenAnalysis:
+class ResetTokenAnalysis(HttpClientMixin):
     """Analysis of a single captured reset token."""
 
     token: str
@@ -53,7 +53,7 @@ class ResetTokenAnalysis:
     is_timestamp_based: bool
 
 
-class PasswordResetTester:
+class PasswordResetTester(HttpClientMixin):
     """
     Test password-reset flows for:
       1. Token entropy (short / low-entropy tokens)

@@ -13,7 +13,7 @@ import httpx
 from krumpa.core import BaseModule, Finding, ScanContext, Target
 from krumpa.core.http_client import HttpClient
 from krumpa.openkrump.parser import SpecParser, ParsedEndpoint
-from krumpa.openkrump.validator import SchemaValidator, ValidationIssue
+from krumpa.openkrump.validator import SchemaValidator
 from krumpa.openkrump.bola_generator import BolaGenerator
 from krumpa.openkrump.schema_validator import ResponseSchemaValidator
 from krumpa.openkrump.spec_mass_assignment import SpecMassAssignmentChecker
@@ -77,29 +77,18 @@ class OpenKrumpModule(BaseModule):
         if ctx.http_client and not self._explicit_client:
             self._client = ctx.http_client
             self._owns_client = False
-            self._spec_mass_assign._http_client = ctx.http_client
-            self._graphql._client = ctx.http_client
-            self._graphql._owns_client = False
-            self._excessive_data._client = ctx.http_client
-            self._excessive_data._owns_client = False
-            self._spec_discovery._client = ctx.http_client
-            self._spec_discovery._owns_client = False
-            self._sec_enforcer._client = ctx.http_client
-            self._sec_enforcer._owns_client = False
-            self._param_tester._client = ctx.http_client
-            self._param_tester._owns_client = False
-            self._spec_diff._client = ctx.http_client
-            self._spec_diff._owns_client = False
-            self._grpc._client = ctx.http_client
-            self._grpc._owns_client = False
-            self._example_tester._client = ctx.http_client
-            self._example_tester._owns_client = False
-            self._api_versioning._client = ctx.http_client
-            self._api_versioning._owns_client = False
-            self._webhook_security._client = ctx.http_client
-            self._webhook_security._owns_client = False
-            self._validation_gaps._client = ctx.http_client
-            self._validation_gaps._owns_client = False
+            self._spec_mass_assign.set_client(ctx.http_client)
+            self._graphql.set_client(ctx.http_client)
+            self._excessive_data.set_client(ctx.http_client)
+            self._spec_discovery.set_client(ctx.http_client)
+            self._sec_enforcer.set_client(ctx.http_client)
+            self._param_tester.set_client(ctx.http_client)
+            self._spec_diff.set_client(ctx.http_client)
+            self._grpc.set_client(ctx.http_client)
+            self._example_tester.set_client(ctx.http_client)
+            self._api_versioning.set_client(ctx.http_client)
+            self._webhook_security.set_client(ctx.http_client)
+            self._validation_gaps.set_client(ctx.http_client)
 
     # ------------------------------------------------------------------
     # Module lifecycle
@@ -185,7 +174,7 @@ class OpenKrumpModule(BaseModule):
             for ep in self.endpoints:
                 url = self._parser.resolve_url(spec, ep.path)
                 target = Target(url=url, method=ep.method)
-                for status_code, resp_schema in (ep.response_schemas or {}).items():
+                for _status_code, resp_schema in (ep.response_schemas or {}).items():
                     schema_def = resp_schema.get("schema") or resp_schema.get("content", {}).get("application/json", {}).get("schema", {})
                     if schema_def:
                         try:

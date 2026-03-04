@@ -8,7 +8,6 @@ grouped by severity, module, and CWE.
 from __future__ import annotations
 
 import html
-import json
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
@@ -53,7 +52,7 @@ class HtmlReportGenerator:
     ) -> str:
         """Produce self-contained HTML string."""
         now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-        meta = metadata or {}
+        _meta = metadata or {}
         sorted_findings = sorted(
             findings,
             key=lambda f: _SEVERITY_ORDER.get(f.severity, 99),

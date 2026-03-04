@@ -12,13 +12,12 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.waaaghlogic.numeric_precision")
 
@@ -68,7 +67,7 @@ _CURRENCY_ROUNDING_VALUES: List[Dict[str, Any]] = [
 ]
 
 
-class NumericPrecisionTester:
+class NumericPrecisionTester(HttpClientMixin):
     """
     Test endpoints for numeric precision abuse:
       1. Integer overflow / underflow at boundaries

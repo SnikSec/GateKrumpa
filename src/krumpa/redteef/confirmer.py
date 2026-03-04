@@ -16,8 +16,8 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 
-from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core import Finding, Target
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 from krumpa.redteef.payload_builder import ProofPayload
 
 logger = logging.getLogger("krumpa.redteef.confirmer")
@@ -34,7 +34,7 @@ class ConfirmationVerdict(enum.Enum):
 
 
 @dataclass
-class ConfirmationResult:
+class ConfirmationResult(HttpClientMixin):
     """Outcome of a confirmation attempt."""
     original_finding: Finding
     verdict: ConfirmationVerdict
@@ -55,7 +55,7 @@ class ConfirmationResult:
 # Confirmer
 # ------------------------------------------------------------------
 
-class Confirmer:
+class Confirmer(HttpClientMixin):
     """
     Execute proof-of-concept payloads and evaluate the results.
 

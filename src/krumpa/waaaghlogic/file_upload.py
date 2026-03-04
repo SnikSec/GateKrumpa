@@ -8,11 +8,11 @@ in filenames, polyglot files, and oversized uploads.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass
+from typing import Dict, List, Optional
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.waaaghlogic.file_upload")
 
@@ -22,7 +22,7 @@ logger = logging.getLogger("krumpa.waaaghlogic.file_upload")
 # ------------------------------------------------------------------
 
 @dataclass
-class UploadPayload:
+class UploadPayload(HttpClientMixin):
     """A file upload test case."""
     label: str
     filename: str
@@ -82,7 +82,7 @@ UPLOAD_PAYLOADS: List[UploadPayload] = [
 
 
 @dataclass
-class UploadTestResult:
+class UploadTestResult(HttpClientMixin):
     """Outcome of a single upload test."""
     payload_label: str
     filename: str
@@ -92,7 +92,7 @@ class UploadTestResult:
     category: str = ""
 
 
-class FileUploadTester:
+class FileUploadTester(HttpClientMixin):
     """
     Test file upload endpoints for dangerous file acceptance.
     """

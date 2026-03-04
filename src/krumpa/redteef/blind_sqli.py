@@ -9,11 +9,11 @@ from __future__ import annotations
 
 import logging
 import time
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass
+from typing import Dict, List, Optional
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.redteef.blind_sqli")
 
@@ -52,7 +52,7 @@ SLEEP_PAYLOADS: Dict[str, List[Dict[str, str]]] = {
 
 
 @dataclass
-class TimingResult:
+class TimingResult(HttpClientMixin):
     """Result of a single timing measurement."""
     payload: str
     db_type: str
@@ -63,7 +63,7 @@ class TimingResult:
     confidence: float = 0.0
 
 
-class BlindSqliConfirmer:
+class BlindSqliConfirmer(HttpClientMixin):
     """
     Confirm blind SQL injection via time-based analysis.
 

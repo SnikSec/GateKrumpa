@@ -114,14 +114,14 @@ class ScanContext:
         If an identical key already exists the new finding is silently
         dropped so modules running in parallel don't bloat the report.
         """
-        key = self._finding_key(finding)
+        key = self.finding_key(finding)
         if key in self._seen_finding_keys:
             return
         self._seen_finding_keys.add(key)
         self.findings.append(finding)
 
     @staticmethod
-    def _finding_key(f: Finding) -> str:
+    def finding_key(f: Finding) -> str:
         target_str = ""
         if f.target:
             target_str = f"{f.target.method}:{f.target.url}"

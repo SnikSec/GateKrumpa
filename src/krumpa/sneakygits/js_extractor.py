@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Set
 from urllib.parse import urljoin
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.sneakygits.js_extractor")
 
@@ -58,7 +58,7 @@ _SOURCEMAP_PATTERN = re.compile(r"//[#@]\s*sourceMappingURL\s*=\s*(\S+)")
 
 
 @dataclass
-class JsExtractionResult:
+class JsExtractionResult(HttpClientMixin):
     """Aggregated results from JS analysis."""
     urls: Set[str] = field(default_factory=set)
     secrets: List[Dict[str, str]] = field(default_factory=list)
@@ -66,7 +66,7 @@ class JsExtractionResult:
     js_files_scanned: int = 0
 
 
-class JsExtractor:
+class JsExtractor(HttpClientMixin):
     """
     Discover JavaScript files on a target, download them, and extract
     API endpoints, secrets, and source-map references.

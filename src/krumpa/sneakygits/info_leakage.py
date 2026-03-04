@@ -19,12 +19,12 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Dict, List, Optional, Set
+from typing import Dict, List, Optional
 
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.sneakygits.info_leakage")
 
@@ -99,7 +99,7 @@ _COMMENT_PATTERNS: List[re.Pattern[str]] = [
 ]
 
 
-class InfoLeakageScanner:
+class InfoLeakageScanner(HttpClientMixin):
     """Detect information leakage across HTTP responses and debug endpoints."""
 
     def __init__(

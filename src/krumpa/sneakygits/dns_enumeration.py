@@ -12,6 +12,7 @@ from typing import Any, List, Optional, Set
 from urllib.parse import urlparse
 
 from krumpa.core import Finding, Severity, Target
+from krumpa.core.http_client import HttpClientMixin
 
 logger = logging.getLogger("krumpa.sneakygits.dns_enumeration")
 
@@ -92,7 +93,7 @@ CT_LOG_URLS = [
 ]
 
 
-class DnsEnumerator:
+class DnsEnumerator(HttpClientMixin):
     """Enumerate subdomains via brute-force, CT logs, and zone transfer.
 
     Discovery methods:

@@ -8,11 +8,11 @@ lack of character-class requirements, and overly long password handling.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.bosskey.password_policy")
 
@@ -40,7 +40,7 @@ POLICY_PROBES: List[Dict[str, Any]] = [
 
 
 @dataclass
-class PasswordPolicyResult:
+class PasswordPolicyResult(HttpClientMixin):
     """Outcome of a single password probe."""
     password_label: str
     accepted: bool
@@ -54,7 +54,7 @@ class PasswordPolicyResult:
         return self.expected_reject and self.accepted
 
 
-class PasswordPolicyTester:
+class PasswordPolicyTester(HttpClientMixin):
     """
     Test the target's password policy by submitting various password
     values and observing whether they are accepted or rejected.

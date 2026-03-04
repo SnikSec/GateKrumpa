@@ -9,11 +9,11 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.waaaghlogic.mass_assignment")
 
@@ -44,7 +44,7 @@ DANGEROUS_FIELDS: List[Dict[str, Any]] = [
 
 
 @dataclass
-class MassAssignmentResult:
+class MassAssignmentResult(HttpClientMixin):
     """Result of injecting a single extra field."""
     field_name: str
     injected_value: Any
@@ -54,7 +54,7 @@ class MassAssignmentResult:
     response_snippet: str = ""
 
 
-class MassAssignmentTester:
+class MassAssignmentTester(HttpClientMixin):
     """
     Test endpoints for mass assignment by injecting extra fields
     into request bodies and checking if they're accepted.

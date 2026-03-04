@@ -11,13 +11,13 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.waaaghlogic.data_validation")
 
@@ -53,7 +53,7 @@ _NULL_INJECTION_PAYLOADS: List[Dict[str, str]] = [
 
 
 @dataclass
-class ValidationResult:
+class ValidationResult(HttpClientMixin):
     """Result of a single validation bypass attempt."""
     label: str
     field_name: str
@@ -63,7 +63,7 @@ class ValidationResult:
     response_snippet: str = ""
 
 
-class DataValidationTester:
+class DataValidationTester(HttpClientMixin):
     """
     Test endpoints for data validation bypass:
       1. Negative value injection (quantities, prices, amounts)
@@ -259,7 +259,7 @@ class DataValidationTester:
         test_fields = ["price", "amount", "quantity", "total"]
 
         for field_name in test_fields:
-            for label, value in special_values:
+            for label, _value in special_values:
                 # JSON doesn't support NaN/Infinity natively,
                 # but some parsers accept them
                 body_str = f'{{"{field_name}": {label}}}'
