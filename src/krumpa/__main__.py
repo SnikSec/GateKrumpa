@@ -21,6 +21,8 @@ from typing import Optional
 import click
 
 from krumpa.core import ScanContext, Target
+from krumpa.core.auth import AuthProvider
+from krumpa.core.credentials import build_provider, resolve_config as _resolve_creds
 from krumpa.core.engine import ScanEngine
 from krumpa.core.reporting import to_json, to_sarif, to_markdown, to_html, to_junit
 
@@ -193,6 +195,12 @@ def scan(
     """Run a security scan against one or more target URLs."""
     config = _load_config(config_path)
 
+    # ── Credential resolution ──────────────────────────────────────
+    # Build provider chain (env vars + optional vault) and resolve all
+    # ${VAR} / vault:// references in the config before anything reads it.
+    cred_provider = build_provider(config)
+    config = _resolve_creds(config, cred_provider)
+
     # Collect all targets: CLI flags + file + config
     all_targets = _collect_targets(targets, targets_file, config)
     if not all_targets:
@@ -212,13 +220,26 @@ def scan(
     # Determine formats
     format_list = [f.strip().lower() for f in formats.split(",")]
 
+    # ── HTTP / Auth wiring ─────────────────────────────────────────
+    http_section: dict = dict(config.get("http", {}))
+    auth_section: dict = http_section.pop("auth", {})
+
+    auth_provider: Optional[AuthProvider] = None
+    if auth_section:
+        auth_provider = AuthProvider(**auth_section)
+        http_section["auth"] = auth_provider
+
     # Build context
     ctx = ScanContext(config=config)
     for t in all_targets:
         ctx.add_target(t)
 
-    # Build engine
-    engine = ScanEngine(ctx=ctx)
+    # Populate auth_tokens so modules like BossKey have access
+    if auth_provider and auth_provider.auth_type != "none":
+        ctx.auth_tokens["_provider_type"] = auth_provider.auth_type
+
+    # Build engine (pass resolved HTTP config including auth)
+    engine = ScanEngine(ctx=ctx, http_config=http_section)
     for name in module_names:
         cls = _load_module_class(name)
         kwargs = _module_kwargs(name, config, spec=spec)
@@ -597,6 +618,48 @@ def _load_spec(spec_path: str) -> dict:
         except ImportError:
             raise click.UsageError("PyYAML is required to parse YAML specs. Install it with: pip install pyyaml")
     return json.loads(text)  # type: ignore[no-any-return]
+
+
+# ------------------------------------------------------------------
+# mcp-serve command
+# ------------------------------------------------------------------
+
+@cli.command("mcp-serve")
+@click.option("--config", "-c", "config_path", default=None, help="Path to YAML/JSON config file.")
+def mcp_serve(config_path: Optional[str]) -> None:
+    """Start the GateKrumpa MCP server (stdio transport).
+
+    The server exposes scan, report, import/export, and SDK generation
+    tools over the Model Context Protocol so AI agents can invoke them.
+
+    Credential references (``${VAR}``, ``vault://``) in the config are
+    resolved before any tool handler runs — agents never see raw secrets.
+
+    Example MCP client config (Claude Desktop, VS Code, etc.)::
+
+        {
+          "mcpServers": {
+            "gatekrumpa": {
+              "command": "gatekrumpa",
+              "args": ["mcp-serve", "--config", "configs/default.yaml"]
+            }
+          }
+        }
+    """
+    from krumpa.mcp.server import McpServer
+    from krumpa.mcp.tools import register_default_tools
+
+    config = _load_config(config_path)
+
+    # Resolve credential references
+    cred_provider = build_provider(config)
+    config = _resolve_creds(config, cred_provider)
+
+    server = McpServer(config=config)
+    register_default_tools(server, config)
+
+    click.echo("GateKrumpa MCP server starting (stdio)…", err=True)
+    asyncio.run(server.run())
 
 
 # ------------------------------------------------------------------

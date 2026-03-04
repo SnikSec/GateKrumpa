@@ -79,3 +79,39 @@ http:
   #   - socks5://tor-gateway:9050
   #   - http://127.0.0.1:8080
   allow_private_networks: false
+
+  # ── Authentication ──────────────────────────────────────────────
+  # Values can use ${ENV_VAR} or vault:// references (resolved at runtime).
+  # auth:
+  #   auth_type: bearer
+  #   token: "${GATEKRUMPA_API_TOKEN}"
+  #
+  #   # Or API key:
+  #   # auth_type: api_key
+  #   # api_key: "${API_KEY}"
+  #   # api_key_header: X-API-Key
+  #
+  #   # Or basic auth:
+  #   # auth_type: basic
+  #   # username: "${SCAN_USER}"
+  #   # password: "vault://secret/scan-creds#password"
+
+# ── Credential providers ─────────────────────────────────────────
+# Secrets are resolved at runtime — never store plaintext credentials
+# in this file.  Use ${ENV_VAR}, ${ENV_VAR:-default}, or vault://
+# references.
+#
+# credentials:
+#   env_prefix: "GATEKRUMPA_"   # optional prefix for env var lookups
+#   vault:
+#     type: hashicorp            # hashicorp | azure | aws
+#     addr: "${VAULT_ADDR}"
+#     mount: secret
+#   # Azure Key Vault:
+#   # vault:
+#   #   type: azure
+#   #   vault_url: "${AZURE_KEY_VAULT_URL}"
+#   # AWS Secrets Manager:
+#   # vault:
+#   #   type: aws
+#   #   region: us-east-1
