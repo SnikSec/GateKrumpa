@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Set
 from urllib.parse import urlparse
 
 from krumpa.core import Finding, Severity, Target
+from krumpa.core.http_client import HttpClientMixin
 
 logger = logging.getLogger("krumpa.openkrump.api_versioning")
 
@@ -65,7 +66,7 @@ VERSION_QUERY_PARAMS = [
 ]
 
 
-class ApiVersioningDetector:
+class ApiVersioningDetector(HttpClientMixin):
     """Detect accessible old API versions and downgrade attacks.
 
     Tests:

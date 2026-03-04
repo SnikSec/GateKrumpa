@@ -8,9 +8,10 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 from krumpa.core import Finding, Severity, Target
+from krumpa.core.http_client import HttpClientMixin
 
 logger = logging.getLogger("krumpa.sneakygits.backup_scanner")
 
@@ -62,7 +63,7 @@ class BackupFinding:
     category: str = "backup"  # backup, vcs, config, debug
 
 
-class BackupScanner:
+class BackupScanner(HttpClientMixin):
     """Scan for backup files, VCS artifacts, and debug endpoints."""
 
     def __init__(self, http_client: Any = None) -> None:
@@ -165,6 +166,8 @@ class BackupScanner:
 
     async def _probe(self, url: str) -> Optional[BackupFinding]:
         """Probe a single URL and return a finding if it exists."""
+        if not self._client:
+            return None
         try:
             resp = await self._client.request(method="GET", url=url)
             if resp.status_code < 400 and resp.status_code != 301:

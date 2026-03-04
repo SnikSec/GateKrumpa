@@ -12,11 +12,11 @@ Analyses GraphQL introspection results for security issues:
 from __future__ import annotations
 
 import logging
-import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set
 
 from krumpa.core import Finding, Severity, Target
+from krumpa.core.http_client import HttpClientMixin
 
 logger = logging.getLogger("krumpa.openkrump.graphql")
 
@@ -70,7 +70,7 @@ class GraphqlType:
     fields: List[GraphqlField] = field(default_factory=list)
 
 
-class GraphqlAnalyzer:
+class GraphqlAnalyzer(HttpClientMixin):
     """
     Analyze GraphQL schemas for security misconfigurations.
     """
@@ -148,7 +148,7 @@ class GraphqlAnalyzer:
             resp = await self._client.request(
                 method="POST",
                 url=target.url,
-                json={"query": _INTROSPECTION_QUERY},
+                json_body={"query": _INTROSPECTION_QUERY},
                 headers={"Content-Type": "application/json"},
             )
             if resp.status_code == 200:

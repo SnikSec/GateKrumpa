@@ -8,7 +8,6 @@ CWE-345: Insufficient Verification of Data Authenticity
 
 from __future__ import annotations
 
-import hashlib
 import logging
 import secrets
 from dataclasses import dataclass
@@ -17,7 +16,7 @@ from typing import List, Optional
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +46,7 @@ _UNKEYED_HEADERS = [
 
 
 @dataclass
-class CacheBuster:
+class CacheBuster(HttpClientMixin):
     """Unique parameter to ensure cache miss on each probe."""
     param: str = "cb"
 
@@ -55,7 +54,7 @@ class CacheBuster:
         return secrets.token_hex(6)
 
 
-class CachePoisonChecker:
+class CachePoisonChecker(HttpClientMixin):
     """
     Tests for web cache poisoning vulnerabilities by injecting
     unkeyed headers and observing response reflection + caching.

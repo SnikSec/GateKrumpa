@@ -9,13 +9,13 @@ CWE-306: Missing Authentication for Critical Function
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Dict, List, Optional
 
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ _BYPASS_CODES = frozenset({200, 201, 202, 204, 301, 302, 307, 308})
 
 
 @dataclass
-class SchemeTestResult:
+class SchemeTestResult(HttpClientMixin):
     """Outcome of a single scheme-enforcement probe."""
 
     url: str
@@ -39,7 +39,7 @@ class SchemeTestResult:
     evidence: str = ""
 
 
-class AuthSchemeEnforcer:
+class AuthSchemeEnforcer(HttpClientMixin):
     """
     Send requests *without* credentials (or with invalid ones) to endpoints
     that should require authentication, and verify that 401/403 is returned.

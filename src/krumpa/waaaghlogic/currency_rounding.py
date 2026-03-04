@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from krumpa.core import Finding, Severity, Target
+from krumpa.core.http_client import HttpClientMixin
 
 
 @dataclass
@@ -57,7 +58,7 @@ CURRENCY_CONFUSION_PAYLOADS = [
 ]
 
 
-class CurrencyRoundingTester:
+class CurrencyRoundingTester(HttpClientMixin):
     """Test for currency rounding exploitation vulnerabilities.
 
     Attack vectors:

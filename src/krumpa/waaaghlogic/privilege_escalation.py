@@ -11,10 +11,11 @@ from __future__ import annotations
 
 import logging
 import re
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set, Tuple
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
 from krumpa.core import Finding, Severity, Target
+from krumpa.core.http_client import HttpClientMixin
 
 logger = logging.getLogger("krumpa.waaaghlogic.privilege_escalation")
 
@@ -48,7 +49,7 @@ _ADMIN_HINTS = {
 }
 
 
-class PrivilegeEscalationTester:
+class PrivilegeEscalationTester(HttpClientMixin):
     """
     Test for horizontal and vertical privilege escalation vulnerabilities.
     """

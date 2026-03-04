@@ -7,7 +7,6 @@ CWE-20: Improper Input Validation
 
 from __future__ import annotations
 
-import json
 import logging
 import secrets
 from dataclasses import dataclass, field
@@ -16,7 +15,7 @@ from typing import List, Optional
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +25,7 @@ logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------
 
 @dataclass
-class ContentTypeProfile:
+class ContentTypeProfile(HttpClientMixin):
     """Defines how to craft a body for a specific content-type."""
     name: str
     content_type: str
@@ -138,7 +137,7 @@ _YAML_PAYLOADS = [
 ]
 
 
-class ContentTypeAwareFuzzer:
+class ContentTypeAwareFuzzer(HttpClientMixin):
     """
     Fuzzes endpoints with content-type-specific payloads,
     detecting parser confusion and content-type-dependent vulns.

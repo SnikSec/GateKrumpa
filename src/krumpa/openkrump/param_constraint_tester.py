@@ -15,20 +15,20 @@ from __future__ import annotations
 import logging
 import random
 import string
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 from krumpa.openkrump.parser import ParsedEndpoint
 
 logger = logging.getLogger("krumpa.openkrump.param_constraint_tester")
 
 
 @dataclass
-class ConstraintViolation:
+class ConstraintViolation(HttpClientMixin):
     """A single negative test case generated from a spec constraint."""
     param_name: str
     constraint_type: str  # min, max, minLength, maxLength, pattern, enum, required, type, format
@@ -38,7 +38,7 @@ class ConstraintViolation:
 
 
 @dataclass
-class ConstraintTestResult:
+class ConstraintTestResult(HttpClientMixin):
     """Result of sending a single constraint violation."""
     violation: ConstraintViolation
     accepted: bool  # True = server accepted invalid value (bad)
@@ -46,7 +46,7 @@ class ConstraintTestResult:
     evidence: str
 
 
-class ParamConstraintTester:
+class ParamConstraintTester(HttpClientMixin):
     """
     Generate negative tests from OpenAPI parameter constraints,
     send them as live requests, and flag missing server-side validation.

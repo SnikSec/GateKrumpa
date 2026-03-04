@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional
 
-from krumpa.core import BaseModule, Finding, ScanContext, Severity
+from krumpa.core import BaseModule, Finding, ScanContext
 from krumpa.waaaghgate.gate import GatePolicy, GateResult
 from krumpa.waaaghgate.reporter import PipelineReporter, ReportFormat
 from krumpa.waaaghgate.compliance import ComplianceMapper
@@ -136,7 +136,7 @@ class WaaaghGateModule(BaseModule):
         duration_val = None
         if ctx.started_at and ctx.finished_at:
             duration_val = (ctx.finished_at - ctx.started_at).total_seconds()
-        scan_record = self._trend.record_scan(
+        _scan_record = self._trend.record_scan(
             active_findings,
             gate_passed=self.gate_result.passed,
             duration=duration_val,

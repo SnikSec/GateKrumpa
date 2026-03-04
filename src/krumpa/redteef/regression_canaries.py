@@ -16,12 +16,12 @@ import hashlib
 import json
 import logging
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.redteef.regression_canaries")
 
@@ -31,7 +31,7 @@ logger = logging.getLogger("krumpa.redteef.regression_canaries")
 # ------------------------------------------------------------------
 
 @dataclass
-class CanaryRecord:
+class CanaryRecord(HttpClientMixin):
     """Persistent record of a confirmed finding's PoC details."""
     canary_id: str
     finding_title: str
@@ -54,7 +54,7 @@ class CanaryRecord:
 
 
 @dataclass
-class ReconfirmResult:
+class ReconfirmResult(HttpClientMixin):
     """Result of re-testing a canary."""
     canary: CanaryRecord
     still_vulnerable: bool
@@ -63,7 +63,7 @@ class ReconfirmResult:
     response_time: float = 0.0
 
 
-class CanaryStore:
+class CanaryStore(HttpClientMixin):
     """
     JSON-file-backed store for canary records.
     
@@ -129,7 +129,7 @@ class CanaryStore:
         return counts
 
 
-class RegressionCanaryChecker:
+class RegressionCanaryChecker(HttpClientMixin):
     """
     Re-confirm previously discovered vulnerabilities to track
     fix status across subsequent scan runs.

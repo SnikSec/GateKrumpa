@@ -12,13 +12,12 @@ from __future__ import annotations
 import logging
 import re
 import secrets
-import time
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.redteef.ssrf_confirmer")
 
@@ -90,7 +89,7 @@ _BYPASS_VARIANTS = [
 ]
 
 
-class SsrfConfirmer:
+class SsrfConfirmer(HttpClientMixin):
     """
     Confirm SSRF by:
       1. Probing cloud metadata endpoints (AWS/GCP/Azure/DO)

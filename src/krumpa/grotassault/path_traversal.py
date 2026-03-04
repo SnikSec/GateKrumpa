@@ -11,10 +11,10 @@ Tests directory traversal / LFI vulnerabilities using:
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, List
 
 from krumpa.core import Finding, Severity, Target
+from krumpa.core.http_client import HttpClientMixin
 
 logger = logging.getLogger("krumpa.grotassault.path_traversal")
 
@@ -59,7 +59,7 @@ _DETECTION_PATTERNS = [
 ]
 
 
-class PathTraversalChecker:
+class PathTraversalChecker(HttpClientMixin):
     """Test for directory traversal / local file inclusion."""
 
     def __init__(self, http_client: Any = None) -> None:
@@ -74,7 +74,7 @@ class PathTraversalChecker:
         findings: List[Finding] = []
         tested_params = self._extract_params(target)
 
-        for param_name, original_value in tested_params:
+        for param_name, _original_value in tested_params:
             for payload in _TRAVERSAL_PAYLOADS:
                 try:
                     url = self._inject_param(target.url, param_name, payload)

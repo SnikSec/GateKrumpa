@@ -12,12 +12,12 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.waaaghlogic.graphql_logic")
 
@@ -60,7 +60,7 @@ _DIRECTIVE_PAYLOADS = [
 ]
 
 
-class GraphqlLogicTester:
+class GraphqlLogicTester(HttpClientMixin):
     """
     Test GraphQL endpoints for:
       1. Query depth bombs (deeply nested queries)

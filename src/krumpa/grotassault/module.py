@@ -90,44 +90,25 @@ class GrotAssaultModule(BaseModule):
     async def setup(self, ctx: ScanContext) -> None:
         """Wire shared HTTP client into fuzzer and sub-checkers if no explicit client."""
         if ctx.http_client and not self._explicit_client:
-            self._fuzzer._client = ctx.http_client
-            self._fuzzer._owns_client = False
-            self._xxe_checker._client = ctx.http_client
-            self._xxe_checker._owns_client = False
-            self._ssrf_checker._client = ctx.http_client
-            self._ssrf_checker._owns_client = False
-            self._nosql_checker._client = ctx.http_client
-            self._nosql_checker._owns_client = False
-            self._crlf_checker._client = ctx.http_client
-            self._crlf_checker._owns_client = False
-            self._smuggling_checker._client = ctx.http_client
-            self._smuggling_checker._owns_client = False
-            self._blind_oob._client = ctx.http_client
-            self._blind_oob._owns_client = False
-            self._deserialization._client = ctx.http_client
-            self._deserialization._owns_client = False
-            self._content_type._client = ctx.http_client
-            self._content_type._owns_client = False
-            self._path_traversal._client = ctx.http_client
-            self._path_traversal._owns_client = False
-            self._open_redirect._client = ctx.http_client
-            self._open_redirect._owns_client = False
-            self._ldap_checker._client = ctx.http_client
-            self._ldap_checker._owns_client = False
-            self._proto_pollution._client = ctx.http_client
-            self._proto_pollution._owns_client = False
-            self._param_pollution._client = ctx.http_client
-            self._param_pollution._owns_client = False
-            self._graphql_fuzzer._client = ctx.http_client
-            self._graphql_fuzzer._owns_client = False
-            self._cache_poison._client = ctx.http_client
-            self._cache_poison._owns_client = False
-            self._unicode_norm._client = ctx.http_client
-            self._unicode_norm._owns_client = False
-            self._ct_aware_fuzzer._client = ctx.http_client
-            self._ct_aware_fuzzer._owns_client = False
-            self._websocket_fuzzer._client = ctx.http_client
-            self._websocket_fuzzer._owns_client = False
+            self._fuzzer.set_client(ctx.http_client)
+            self._xxe_checker.set_client(ctx.http_client)
+            self._ssrf_checker.set_client(ctx.http_client)
+            self._nosql_checker.set_client(ctx.http_client)
+            self._crlf_checker.set_client(ctx.http_client)
+            self._smuggling_checker.set_client(ctx.http_client)
+            self._blind_oob.set_client(ctx.http_client)
+            self._deserialization.set_client(ctx.http_client)
+            self._content_type.set_client(ctx.http_client)
+            self._path_traversal.set_client(ctx.http_client)
+            self._open_redirect.set_client(ctx.http_client)
+            self._ldap_checker.set_client(ctx.http_client)
+            self._proto_pollution.set_client(ctx.http_client)
+            self._param_pollution.set_client(ctx.http_client)
+            self._graphql_fuzzer.set_client(ctx.http_client)
+            self._cache_poison.set_client(ctx.http_client)
+            self._unicode_norm.set_client(ctx.http_client)
+            self._ct_aware_fuzzer.set_client(ctx.http_client)
+            self._websocket_fuzzer.set_client(ctx.http_client)
 
     # ------------------------------------------------------------------
     # Module lifecycle

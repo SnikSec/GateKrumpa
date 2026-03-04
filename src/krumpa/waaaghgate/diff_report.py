@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List
 
-from krumpa.core import Finding, Severity
+from krumpa.core import Finding
 
 
 class DiffReport:

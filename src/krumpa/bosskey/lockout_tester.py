@@ -11,9 +11,10 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from krumpa.core import Finding, Severity, Target
+from krumpa.core.http_client import HttpClientMixin
 
 logger = logging.getLogger("krumpa.bosskey.lockout_tester")
 
@@ -38,7 +39,7 @@ class LockoutResult:
     bypass_header: str = ""
 
 
-class AccountLockoutTester:
+class AccountLockoutTester(HttpClientMixin):
     """Test account lockout mechanisms and rate limiting."""
 
     def __init__(
@@ -131,6 +132,8 @@ class AccountLockoutTester:
 
     async def _test_lockout(self, target: Target) -> LockoutResult:
         """Send N failed login attempts and detect lockout/rate-limiting."""
+        if not self._client:
+            return LockoutResult(locked_out_after=0, total_attempts=0, rate_limited=False, bypass_possible=False)
         locked_after = 0
         rate_limited = False
 
@@ -139,7 +142,7 @@ class AccountLockoutTester:
                 resp = await self._client.request(
                     method="POST",
                     url=target.url,
-                    json={"username": "lockout_test_user", "password": f"wrong_{i}"},
+                    json_body={"username": "lockout_test_user", "password": f"wrong_{i}"},
                 )
                 if resp.status_code == 429:
                     rate_limited = True
@@ -159,6 +162,8 @@ class AccountLockoutTester:
 
     async def _test_bypass(self, target: Target, lockout_threshold: int) -> LockoutResult:
         """Test if lockout can be bypassed via IP header rotation."""
+        if not self._client:
+            return LockoutResult(locked_out_after=0, total_attempts=0, rate_limited=False, bypass_possible=False)
         for header_name, pattern in _ROTATION_HEADERS:
             # First, trigger lockout
             success_count = 0
@@ -168,7 +173,7 @@ class AccountLockoutTester:
                     resp = await self._client.request(
                         method="POST",
                         url=target.url,
-                        json={"username": "lockout_test_user", "password": f"wrong_{i}"},
+                        json_body={"username": "lockout_test_user", "password": f"wrong_{i}"},
                         headers=headers,
                     )
                     if resp.status_code not in (423, 403, 429):

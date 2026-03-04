@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.sneakygits.ssl_analyzer")
 
@@ -38,7 +38,7 @@ PFS_CIPHERS = {"ECDHE", "DHE", "ECDH"}
 
 
 @dataclass
-class TlsInfo:
+class TlsInfo(HttpClientMixin):
     """Collected TLS information for a target."""
     hostname: str = ""
     port: int = 443
@@ -58,7 +58,7 @@ class TlsInfo:
     errors: List[str] = field(default_factory=list)
 
 
-class SslAnalyzer:
+class SslAnalyzer(HttpClientMixin):
     """
     Analyse the SSL/TLS configuration of HTTPS targets.
     """

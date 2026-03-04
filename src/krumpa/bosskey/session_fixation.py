@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.bosskey.session_fixation")
 
@@ -28,7 +28,7 @@ _SESSION_COOKIE_NAMES = {
 
 
 @dataclass
-class FixationTestResult:
+class FixationTestResult(HttpClientMixin):
     """Result of a single session-fixation test."""
     endpoint: str
     pre_auth_cookies: Dict[str, str] = field(default_factory=dict)
@@ -37,7 +37,7 @@ class FixationTestResult:
     is_vulnerable: bool = False
 
 
-class SessionFixationChecker:
+class SessionFixationChecker(HttpClientMixin):
     """
     Detect session-fixation vulnerabilities by comparing session
     identifiers before and after authentication.
