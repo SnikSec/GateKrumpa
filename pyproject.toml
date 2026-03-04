@@ -41,6 +41,9 @@ dev = [
 yaml = [
     "pyyaml>=6,<7",
 ]
+mcp = [
+    "mcp>=1.0,<2",
+]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
