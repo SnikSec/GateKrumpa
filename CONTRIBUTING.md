@@ -1,0 +1,88 @@
+# Contributing to GateKrumpa
+
+Thanks for your interest in contributing! This document covers the guidelines
+and workflow for the project.
+
+## Getting Started
+
+```bash
+# Clone the repo
+git clone https://github.com/SnikSec/GateKrumpa.git
+cd GateKrumpa
+
+# Create a virtual environment
+python -m venv .venv
+.venv\Scripts\activate   # Windows
+# source .venv/bin/activate  # macOS/Linux
+
+# Install in editable mode with dev dependencies
+pip install -e ".[dev]"
+```
+
+## Development Workflow
+
+1. **Branch from `dev`** — all work targets the `dev` branch.
+2. **Write tests first** (or alongside) — we maintain 692+ tests.
+3. **Run the checks before pushing:**
+
+```bash
+# Type checking (must be 0 errors, 0 warnings)
+python -m pyright src/
+
+# Tests (must all pass)
+python -m pytest tests/ -q
+```
+
+## Project Structure
+
+```
+src/krumpa/
+├── core/           # Shared primitives (BaseModule, HttpClient, ScanContext, etc.)
+├── sneakygits/     # Recon module
+├── bosskey/        # Auth modelling module
+├── waaaghlogic/    # Business logic testing module
+├── grotassault/    # Mutation fuzzing module
+├── redteef/        # Exploit confirmation module
+├── waaaghgate/     # CI/CD integration module
+└── openkrump/      # API-first testing module
+```
+
+## Adding a New Sub-Component
+
+Every sub-component that uses HTTP should:
+
+1. Accept `http_client: Optional[HttpClient] = None` in `__init__`.
+2. Inherit from `HttpClientMixin` (from `krumpa.core.http_client`).
+3. Store `self._client = http_client` and `self._owns_client = http_client is None`.
+4. The parent `module.py` wires the shared client via `component.set_client(ctx.http_client)` in `setup()`.
+
+## Coding Standards
+
+- **Python 3.11+** — use modern syntax (`match`, `|` unions, etc.).
+- **Type hints everywhere** — pyright `standard` mode, 0 warnings.
+- **Async-first** — all HTTP-touching code should be `async`.
+- **Dataclasses** for value objects, not dicts.
+- **Imports** — absolute imports from `krumpa.*`, no relative imports.
+
+## Commit Messages
+
+Use conventional-style prefixes:
+
+- `feat:` — new feature or capability
+- `fix:` — bug fix
+- `refactor:` — code restructuring without behaviour change
+- `tech-debt:` — cleanup, warning fixes, import tidying
+- `docs:` — documentation only
+- `test:` — test additions or changes
+
+## Reporting Issues
+
+Open a GitHub issue with:
+- Steps to reproduce
+- Expected vs. actual behaviour
+- Python version and OS
+
+## License
+
+By contributing, you agree that your contributions will be licensed under the
+MIT License (see [LICENSE](LICENSE)).

@@ -1,4 +1,4 @@
-"""Tests for HttpClient — URL validation, SSRF protection, sanitisation."""
+"""Tests for HttpClient — URL validation, SSRF protection, sanitisation, proxy chaining."""
 
 from __future__ import annotations
 
@@ -7,7 +7,12 @@ from typing import Any, Dict, Optional
 
 import pytest
 
-from krumpa.core.http_client import HttpClient, _sanitise_url, _SENSITIVE_PARAMS
+from krumpa.core.http_client import (
+    HttpClient,
+    _sanitise_url,
+    _SENSITIVE_PARAMS,
+    _SUPPORTED_PROXY_SCHEMES,
+)
 
 
 # ------------------------------------------------------------------
@@ -161,3 +166,85 @@ class TestConstructorOptions:
         # Just ensure construction succeeds with verify_ssl=False
         c = HttpClient(verify_ssl=False)
         assert c is not None
+
+
+# ------------------------------------------------------------------
+# Proxy chaining / _resolve_proxy
+# ------------------------------------------------------------------
+
+class TestResolveProxy:
+    """Unit tests for HttpClient._resolve_proxy static method."""
+
+    def test_no_proxy_returns_none(self):
+        assert HttpClient._resolve_proxy(None, None) is None
+
+    def test_single_proxy_http(self):
+        result = HttpClient._resolve_proxy("http://proxy:8080", None)
+        assert result == "http://proxy:8080"
+
+    def test_single_proxy_socks5(self):
+        result = HttpClient._resolve_proxy("socks5://tor:9050", None)
+        assert result == "socks5://tor:9050"
+
+    def test_single_proxy_socks5h(self):
+        result = HttpClient._resolve_proxy("socks5h://tor:9050", None)
+        assert result == "socks5h://tor:9050"
+
+    def test_single_proxy_socks4(self):
+        result = HttpClient._resolve_proxy("socks4://old:1080", None)
+        assert result == "socks4://old:1080"
+
+    def test_chain_returns_last_entry(self):
+        chain = ["socks5://hop1:9050", "http://hop2:8080", "http://exit:3128"]
+        result = HttpClient._resolve_proxy(None, chain)
+        assert result == "http://exit:3128"
+
+    def test_chain_single_entry(self):
+        result = HttpClient._resolve_proxy(None, ["https://only:443"])
+        assert result == "https://only:443"
+
+    def test_chain_overrides_proxy_param(self):
+        """proxy_chain takes priority over proxy when both given."""
+        result = HttpClient._resolve_proxy(
+            "http://ignored:8080",
+            ["socks5://hop1:9050", "http://used:3128"],
+        )
+        assert result == "http://used:3128"
+
+    def test_invalid_scheme_raises(self):
+        with pytest.raises(ValueError, match="Unsupported proxy scheme"):
+            HttpClient._resolve_proxy("ftp://bad:21", None)
+
+    def test_invalid_scheme_in_chain_raises(self):
+        with pytest.raises(ValueError, match="Unsupported proxy scheme"):
+            HttpClient._resolve_proxy(None, ["http://ok:8080", "ftp://bad:21"])
+
+    def test_empty_chain_returns_none(self):
+        assert HttpClient._resolve_proxy(None, []) is None
+
+    def test_supported_schemes_constant(self):
+        expected = {"http", "https", "socks5", "socks5h", "socks4"}
+        assert _SUPPORTED_PROXY_SCHEMES == expected
+
+
+class TestProxyChainProperty:
+    """Tests for the active_proxy_chain property on constructed clients."""
+
+    def test_no_proxy_empty_chain(self):
+        c = HttpClient()
+        assert c.active_proxy_chain == []
+
+    def test_single_proxy_chain_property(self):
+        c = HttpClient(proxy="http://proxy:8080")
+        assert c.active_proxy_chain == ["http://proxy:8080"]
+
+    def test_multi_hop_chain_property(self):
+        chain = ["socks5://hop1:9050", "http://hop2:3128"]
+        c = HttpClient(proxy_chain=chain)
+        assert c.active_proxy_chain == chain
+
+    def test_chain_property_returns_copy(self):
+        c = HttpClient(proxy="http://proxy:8080")
+        chain = c.active_proxy_chain
+        chain.append("http://extra:9999")
+        assert c.active_proxy_chain == ["http://proxy:8080"]
