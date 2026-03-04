@@ -11,10 +11,9 @@ NoSQL, CRLF, open-redirect, XXE, LFI, LDAP, and common passwords.
 
 from __future__ import annotations
 
-import itertools
 import logging
 from dataclasses import dataclass, field
-from typing import Dict, Generator, List, Optional, Sequence
+from typing import Dict, Generator, List, Optional
 
 logger = logging.getLogger(__name__)
 

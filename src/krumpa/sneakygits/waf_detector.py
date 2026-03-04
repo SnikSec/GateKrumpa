@@ -13,9 +13,10 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional
 
 from krumpa.core import Finding, Severity, Target
+from krumpa.core.http_client import HttpClientMixin
 
 logger = logging.getLogger("krumpa.sneakygits.waf_detector")
 
@@ -57,7 +58,7 @@ _WAF_PROBE_PAYLOADS = [
 ]
 
 
-class WafDetector:
+class WafDetector(HttpClientMixin):
     """Detect and fingerprint Web Application Firewalls."""
 
     def __init__(self, http_client: Any = None) -> None:

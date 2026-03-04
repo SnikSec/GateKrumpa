@@ -14,12 +14,12 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.grotassault.ldap_payloads")
 
@@ -98,7 +98,7 @@ _LDAP_ERROR_PATTERNS: List[re.Pattern[str]] = [
 ]
 
 
-class LdapChecker:
+class LdapChecker(HttpClientMixin):
     """Test endpoints for LDAP filter injection."""
 
     def __init__(
@@ -118,7 +118,7 @@ class LdapChecker:
             # Get baseline
             try:
                 baseline = await client.request(target.method, target.url)
-                baseline_status = baseline.status_code
+                _baseline_status = baseline.status_code
                 baseline_len = len(baseline.text)
             except (httpx.HTTPError, OSError, ValueError):
                 return findings

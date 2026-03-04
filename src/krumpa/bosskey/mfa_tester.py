@@ -8,16 +8,14 @@ CWE-308: Use of Single-factor Authentication
 
 from __future__ import annotations
 
-import itertools
 import logging
 import re
-import time
 from typing import Any, Dict, List, Optional
 
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +39,7 @@ _MFA_URL_HINTS = re.compile(
 )
 
 
-class MfaTester:
+class MfaTester(HttpClientMixin):
     """
     Test MFA implementations for:
       1. Step-skip bypass (go directly to post-auth resource)
@@ -264,7 +262,7 @@ class MfaTester:
     ) -> List[Finding]:
         """Check for backup code exposure and reuse."""
         findings: List[Finding] = []
-        endpoint = mfa_endpoint or target.url
+        _endpoint = mfa_endpoint or target.url
 
         try:
             # Try requesting backup codes endpoint

@@ -16,7 +16,7 @@ from typing import List, Optional
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.redteef.open_redirect_confirmer")
 
@@ -71,7 +71,7 @@ _REDIRECT_PATTERN = re.compile(
 )
 
 
-class OpenRedirectConfirmer:
+class OpenRedirectConfirmer(HttpClientMixin):
     """
     Confirm open redirect by:
       1. Injecting redirect payloads into identified parameters

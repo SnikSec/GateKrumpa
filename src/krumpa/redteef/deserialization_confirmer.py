@@ -14,11 +14,11 @@ from __future__ import annotations
 import hashlib
 import logging
 import time
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass
+from typing import Dict, List, Optional
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.redteef.deserialization_confirmer")
 
@@ -28,7 +28,7 @@ logger = logging.getLogger("krumpa.redteef.deserialization_confirmer")
 # ------------------------------------------------------------------
 
 @dataclass
-class GadgetChain:
+class GadgetChain(HttpClientMixin):
     """A single deserialization gadget chain definition."""
     name: str
     platform: str  # java, python, php, ruby, dotnet
@@ -200,7 +200,7 @@ ALL_CHAINS: List[GadgetChain] = (
 
 
 @dataclass
-class DeserializationResult:
+class DeserializationResult(HttpClientMixin):
     """Result of a single deserialization confirmation attempt."""
     chain: GadgetChain
     confirmed: bool
@@ -209,7 +209,7 @@ class DeserializationResult:
     measured_delay: float = 0.0
 
 
-class DeserializationConfirmer:
+class DeserializationConfirmer(HttpClientMixin):
     """
     Confirm deserialization vulnerabilities with safe gadget-chain probes.
 

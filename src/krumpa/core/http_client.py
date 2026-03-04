@@ -53,6 +53,23 @@ _BLOCKED_NETWORKS = [
 ]
 
 
+class HttpClientMixin:
+    """Mixin for components that accept an optional shared :class:`HttpClient`.
+
+    Sub-components store the client in ``_client`` and a flag in
+    ``_owns_client``.  Parent modules should call :meth:`set_client`
+    rather than touching those protected attributes directly.
+    """
+
+    _client: Optional["HttpClient"]
+    _owns_client: bool
+
+    def set_client(self, client: "HttpClient", *, owns: bool = False) -> None:
+        """Inject (or replace) the shared HTTP client on this component."""
+        self._client = client
+        self._owns_client = owns
+
+
 class HttpClient:
     """Async HTTP client shared across modules."""
 

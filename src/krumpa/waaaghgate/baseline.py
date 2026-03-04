@@ -19,7 +19,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
-from krumpa.core import Finding, Severity
+from krumpa.core import Finding
 
 logger = logging.getLogger("krumpa.waaaghgate.baseline")
 

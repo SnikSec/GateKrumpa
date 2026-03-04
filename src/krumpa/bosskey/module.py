@@ -70,40 +70,23 @@ class BossKeyModule(BaseModule):
     async def setup(self, ctx: ScanContext) -> None:
         """Wire shared HTTP client into sub-components."""
         if ctx.http_client:
-            self._auth_probe._client = ctx.http_client
-            self._auth_probe._owns_client = False
-            self._csrf_checker._client = ctx.http_client
-            self._csrf_checker._owns_client = False
-            self._oauth2_analyzer._client = ctx.http_client
-            self._oauth2_analyzer._owns_client = False
-            self._session_fixation._client = ctx.http_client
-            self._session_fixation._owns_client = False
-            self._password_policy._client = ctx.http_client
-            self._password_policy._owns_client = False
-            self._session_timeout._client = ctx.http_client
-            self._session_timeout._owns_client = False
-            self._lockout_tester._client = ctx.http_client
-            self._lockout_tester._owns_client = False
-            self._rbac_builder._client = ctx.http_client
-            self._rbac_builder._owns_client = False
-            self._auth_scheme_enforcer._client = ctx.http_client
-            self._auth_scheme_enforcer._owns_client = False
-            self._password_reset._client = ctx.http_client
-            self._password_reset._owns_client = False
-            self._credential_transport._client = ctx.http_client
-            self._credential_transport._owns_client = False
-            self._token_storage._client = ctx.http_client
-            self._token_storage._owns_client = False
-            self._registration_tester._client = ctx.http_client
-            self._registration_tester._owns_client = False
-            self._mfa_tester._client = ctx.http_client
-            self._mfa_tester._owns_client = False
-            self._saml_analyzer._client = ctx.http_client
-            self._saml_analyzer._owns_client = False
-            self._remember_me._client = ctx.http_client
-            self._remember_me._owns_client = False
-            self._concurrent_sessions._client = ctx.http_client
-            self._concurrent_sessions._owns_client = False
+            self._auth_probe.set_client(ctx.http_client)
+            self._csrf_checker.set_client(ctx.http_client)
+            self._oauth2_analyzer.set_client(ctx.http_client)
+            self._session_fixation.set_client(ctx.http_client)
+            self._password_policy.set_client(ctx.http_client)
+            self._session_timeout.set_client(ctx.http_client)
+            self._lockout_tester.set_client(ctx.http_client)
+            self._rbac_builder.set_client(ctx.http_client)
+            self._auth_scheme_enforcer.set_client(ctx.http_client)
+            self._password_reset.set_client(ctx.http_client)
+            self._credential_transport.set_client(ctx.http_client)
+            self._token_storage.set_client(ctx.http_client)
+            self._registration_tester.set_client(ctx.http_client)
+            self._mfa_tester.set_client(ctx.http_client)
+            self._saml_analyzer.set_client(ctx.http_client)
+            self._remember_me.set_client(ctx.http_client)
+            self._concurrent_sessions.set_client(ctx.http_client)
 
     async def run(self, ctx: ScanContext) -> List[Finding]:
         findings: List[Finding] = []

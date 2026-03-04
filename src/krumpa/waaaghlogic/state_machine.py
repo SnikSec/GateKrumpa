@@ -10,19 +10,19 @@ CWE-841: Improper Enforcement of Behavioral Workflow
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set
 
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.waaaghlogic.state_machine")
 
 
 @dataclass
-class StateTransition:
+class StateTransition(HttpClientMixin):
     """A single allowed state transition."""
     from_state: str
     to_state: str
@@ -30,7 +30,7 @@ class StateTransition:
 
 
 @dataclass
-class StateMachineDefinition:
+class StateMachineDefinition(HttpClientMixin):
     """
     A full state machine definition with named states and allowed
     transitions. Typically loaded from a YAML config.
@@ -124,7 +124,7 @@ PAYMENT_STATE_MACHINE = StateMachineDefinition(
 DEFAULT_MACHINES = [ORDER_STATE_MACHINE, TICKET_STATE_MACHINE, PAYMENT_STATE_MACHINE]
 
 
-class StateMachineTester:
+class StateMachineTester(HttpClientMixin):
     """
     Test for illegal state transitions:
       1. Direct jumps (e.g., pending → delivered)

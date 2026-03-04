@@ -9,14 +9,12 @@ CWE-287: Improper Authentication
 from __future__ import annotations
 
 import logging
-import re
-import time
 from typing import Any, Dict, List, Optional
 
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +47,7 @@ _PRIVILEGE_FIELDS: List[Dict[str, Any]] = [
 ]
 
 
-class RegistrationTester:
+class RegistrationTester(HttpClientMixin):
     """
     Test registration flows for:
       1. Duplicate account creation (same email, different casing/formatting)

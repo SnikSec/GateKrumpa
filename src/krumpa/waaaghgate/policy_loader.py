@@ -142,7 +142,7 @@ class PolicyLoader:
 
         # YAML parsing — try pyyaml, fall back to basic json-compat parse
         try:
-            import yaml  # type: ignore
+            import yaml
             return yaml.safe_load(text) or {}
         except ImportError:
             # Minimal YAML subset: if it looks like JSON, parse as JSON

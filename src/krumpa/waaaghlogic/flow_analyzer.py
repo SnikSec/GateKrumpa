@@ -22,7 +22,7 @@ from typing import Any, Dict, List, Optional
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.waaaghlogic.flow")
 
@@ -32,7 +32,7 @@ logger = logging.getLogger("krumpa.waaaghlogic.flow")
 # ------------------------------------------------------------------
 
 @dataclass
-class WorkflowStep:
+class WorkflowStep(HttpClientMixin):
     """A single step in a multi-step business workflow."""
     name: str
     url: str
@@ -46,7 +46,7 @@ class WorkflowStep:
 
 
 @dataclass
-class _StepResult:
+class _StepResult(HttpClientMixin):
     """Outcome of executing a single workflow step."""
     step: WorkflowStep
     status_code: int
@@ -58,7 +58,7 @@ class _StepResult:
 # FlowAnalyzer
 # ------------------------------------------------------------------
 
-class FlowAnalyzer:
+class FlowAnalyzer(HttpClientMixin):
     """
     Analyse multi-step workflows for business-logic vulnerabilities.
 

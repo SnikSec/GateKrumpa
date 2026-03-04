@@ -9,9 +9,10 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional
 
 from krumpa.core import Finding, Severity, Target
+from krumpa.core.http_client import HttpClientMixin
 
 logger = logging.getLogger("krumpa.bosskey.rbac_matrix")
 
@@ -67,7 +68,7 @@ class RbacMatrix:
         return gaps
 
 
-class RbacMatrixBuilder:
+class RbacMatrixBuilder(HttpClientMixin):
     """Build and analyze RBAC matrices."""
 
     def __init__(

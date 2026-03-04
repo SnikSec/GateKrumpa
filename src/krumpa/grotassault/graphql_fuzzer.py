@@ -8,15 +8,14 @@ CWE-400: Uncontrolled Resource Consumption
 
 from __future__ import annotations
 
-import json
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +93,7 @@ def _mutation_bomb(count: int) -> str:
 # ------------------------------------------------------------------
 
 @dataclass
-class GraphqlFuzzProfile:
+class GraphqlFuzzProfile(HttpClientMixin):
     """Configurable parameters for GraphQL fuzzing intensity."""
     depth_levels: List[int] = field(default_factory=lambda: [10, 25, 50, 100])
     alias_counts: List[int] = field(default_factory=lambda: [50, 200, 500, 1000])
@@ -108,7 +107,7 @@ class GraphqlFuzzProfile:
 # Main class
 # ------------------------------------------------------------------
 
-class GraphqlFuzzer:
+class GraphqlFuzzer(HttpClientMixin):
     """
     Fuzzes GraphQL endpoints with resource-exhaustion and
     structure-abuse payloads.

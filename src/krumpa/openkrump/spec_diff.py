@@ -22,7 +22,7 @@ from typing import Any, Dict, List, Optional, Set
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 from krumpa.openkrump.parser import ParsedEndpoint
 
 logger = logging.getLogger("krumpa.openkrump.spec_diff")
@@ -39,7 +39,7 @@ class DiffType(Enum):
 
 
 @dataclass
-class SpecDiffItem:
+class SpecDiffItem(HttpClientMixin):
     """A single difference between spec and deployed API."""
     diff_type: DiffType
     path: str
@@ -50,7 +50,7 @@ class SpecDiffItem:
 
 
 @dataclass
-class SpecDiffReport:
+class SpecDiffReport(HttpClientMixin):
     """Full diff report."""
     total_checks: int = 0
     diffs: List[SpecDiffItem] = field(default_factory=list)
@@ -103,7 +103,7 @@ _SHADOW_PROBE_PATHS: List[str] = [
 ]
 
 
-class SpecDiffChecker:
+class SpecDiffChecker(HttpClientMixin):
     """
     Compare deployed API behavior against the OpenAPI specification.
 

@@ -23,3 +23,13 @@ __all__ = [
     "waaaghgate",
     "openkrump",
 ]
+
+from . import (  # noqa: E402
+    sneakygits,
+    bosskey,
+    waaaghlogic,
+    grotassault,
+    redteef,
+    waaaghgate,
+    openkrump,
+)

@@ -16,13 +16,13 @@ from __future__ import annotations
 
 import logging
 import re
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from dataclasses import dataclass
+from typing import List, Optional
 
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.bosskey.csrf")
 
@@ -66,7 +66,7 @@ _CSRF_HEADERS = [
 # ---------------------------------------------------------------------------
 
 @dataclass
-class CsrfCheckResult:
+class CsrfCheckResult(HttpClientMixin):
     """Result of a CSRF audit on a single target."""
     url: str
     has_csrf_input: bool = False
@@ -81,7 +81,7 @@ class CsrfCheckResult:
 # CsrfChecker
 # ---------------------------------------------------------------------------
 
-class CsrfChecker:
+class CsrfChecker(HttpClientMixin):
     """Audit endpoints for CSRF protection.
 
     Parameters

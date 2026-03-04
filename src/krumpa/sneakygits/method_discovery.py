@@ -14,12 +14,12 @@ References:
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Set
+from typing import List, Optional, Set
 
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.sneakygits.method_discovery")
 
@@ -37,7 +37,7 @@ _TAMPER_METHODS: List[str] = [
 ]
 
 
-class MethodDiscovery:
+class MethodDiscovery(HttpClientMixin):
     """Discover and assess allowed HTTP methods on target endpoints."""
 
     def __init__(

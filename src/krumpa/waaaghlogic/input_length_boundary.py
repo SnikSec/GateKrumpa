@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.waaaghlogic.input_length_boundary")
 
@@ -54,7 +54,7 @@ _UNICODE_EDGE_CASES: List[Dict[str, Any]] = [
 _BOUNDARY_SIZES = [127, 128, 255, 256, 511, 512, 1023, 1024]
 
 
-class InputLengthBoundaryTester:
+class InputLengthBoundaryTester(HttpClientMixin):
     """
     Test endpoints for input length boundary issues:
       1. Empty / whitespace-only inputs

@@ -11,12 +11,12 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.sneakygits.headers")
 
@@ -26,7 +26,7 @@ logger = logging.getLogger("krumpa.sneakygits.headers")
 # ------------------------------------------------------------------
 
 @dataclass(frozen=True)
-class _HeaderCheck:
+class _HeaderCheck(HttpClientMixin):
     """Describes a single security-header expectation."""
     name: str                       # HTTP header name (case-insensitive)
     required: bool                  # Is absence alone a finding?
@@ -198,7 +198,7 @@ SECURITY_HEADERS: List[_HeaderCheck] = [
 # Auditor
 # ------------------------------------------------------------------
 
-class HeaderAuditor:
+class HeaderAuditor(HttpClientMixin):
     """
     Fetch a URL and audit its security headers.
 

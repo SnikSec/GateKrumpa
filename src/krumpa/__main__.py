@@ -178,7 +178,7 @@ def scan(
 def _module_kwargs(name: str, config: dict, *, spec: Optional[str] = None) -> dict:
     """Extract constructor kwargs for a module from the config dict."""
     # Module-specific config lives under config[module_name]
-    mod_config = config.get(name, {})
+    _mod_config = config.get(name, {})
     kwargs: dict = {}
 
     if name == "openkrump" and spec:

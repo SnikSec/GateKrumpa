@@ -20,14 +20,14 @@ from typing import Any, Dict, List, Optional, Set
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 from krumpa.openkrump.parser import ParsedEndpoint
 
 logger = logging.getLogger("krumpa.openkrump.security_scheme_enforcer")
 
 
 @dataclass
-class SchemeTestResult:
+class SchemeTestResult(HttpClientMixin):
     """Result of testing security enforcement on one endpoint."""
     endpoint: ParsedEndpoint
     expected_schemes: List[str]
@@ -37,7 +37,7 @@ class SchemeTestResult:
 
 
 @dataclass
-class EnforcementReport:
+class EnforcementReport(HttpClientMixin):
     """Aggregate enforcement check results."""
     total_endpoints: int = 0
     protected_endpoints: int = 0
@@ -46,7 +46,7 @@ class EnforcementReport:
     warnings: List[SchemeTestResult] = field(default_factory=list)
 
 
-class SecuritySchemeEnforcer:
+class SecuritySchemeEnforcer(HttpClientMixin):
     """
     Send unauthenticated requests to endpoints that declare security
     requirements in the OpenAPI spec, then verify the server returns
@@ -284,8 +284,7 @@ class SecuritySchemeEnforcer:
         if ep.security:
             names: List[str] = []
             for item in ep.security:
-                if isinstance(item, dict):
-                    names.extend(item.keys())
+                names.extend(item.keys())
             return names
         return global_security
 

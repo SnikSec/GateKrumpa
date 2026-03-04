@@ -8,10 +8,10 @@ especially sensitive / PII fields.  Maps to OWASP API3:2023.
 from __future__ import annotations
 
 import logging
-import re
 from typing import Any, Dict, List, Optional, Set
 
 from krumpa.core import Finding, Severity, Target
+from krumpa.core.http_client import HttpClientMixin
 
 logger = logging.getLogger("krumpa.openkrump.excessive_data")
 
@@ -33,7 +33,7 @@ _PII_FIELDS: Set[str] = {
 }
 
 
-class ExcessiveDataDetector:
+class ExcessiveDataDetector(HttpClientMixin):
     """Detect responses returning sensitive or unexpected fields."""
 
     def __init__(self, http_client: Any = None) -> None:
@@ -112,8 +112,6 @@ class ExcessiveDataDetector:
     def extract_expected_fields(self, response_schema: Dict[str, Any]) -> Set[str]:
         """Extract expected field names from an OpenAPI response schema."""
         fields: Set[str] = set()
-        if not isinstance(response_schema, dict):
-            return fields
 
         properties = response_schema.get("properties", {})
         fields.update(properties.keys())

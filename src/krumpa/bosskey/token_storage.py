@@ -15,7 +15,7 @@ from typing import List, Optional
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ _GLOBAL_LEAK_PATTERNS = [
 ]
 
 
-class TokenStorageAnalyzer:
+class TokenStorageAnalyzer(HttpClientMixin):
     """
     Inspect page content for insecure token storage practices:
       1. localStorage usage for auth tokens (XSS-accessible)
