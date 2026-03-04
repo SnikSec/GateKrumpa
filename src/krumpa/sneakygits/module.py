@@ -20,6 +20,7 @@ from krumpa.sneakygits.backup_scanner import BackupScanner
 from krumpa.sneakygits.fingerprint_db import FingerprintDb
 from krumpa.sneakygits.method_discovery import MethodDiscovery
 from krumpa.sneakygits.info_leakage import InfoLeakageScanner
+from krumpa.sneakygits.dns_enumeration import DnsEnumerator
 
 logger = logging.getLogger("krumpa.sneakygits")
 
@@ -54,6 +55,7 @@ class SneakyGitsModule(BaseModule):
         self._fingerprint_db = FingerprintDb()
         self._method_discovery = MethodDiscovery()
         self._info_leakage = InfoLeakageScanner()
+        self._dns_enum = DnsEnumerator()
 
     async def setup(self, ctx: ScanContext) -> None:
         """Wire shared HTTP client into sub-components."""
@@ -79,6 +81,8 @@ class SneakyGitsModule(BaseModule):
             self._method_discovery._owns_client = False
             self._info_leakage._client = client
             self._info_leakage._owns_client = False
+            self._dns_enum._client = client
+            self._dns_enum._owns_client = False
 
         # Inject auth tokens into the crawler for authenticated crawling
         if ctx.auth_tokens:
@@ -156,6 +160,10 @@ class SneakyGitsModule(BaseModule):
             # Information leakage scanning
             leak_findings = await self._info_leakage.scan(target)
             findings.extend(leak_findings)
+
+            # DNS subdomain enumeration
+            dns_findings = await self._dns_enum.enumerate(target)
+            findings.extend(dns_findings)
 
             # FingerprintDb-based technology detection
             db_detections = self._fingerprint_db.detect(
