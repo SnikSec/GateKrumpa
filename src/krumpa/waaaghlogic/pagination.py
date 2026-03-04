@@ -12,9 +12,10 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, List
 
 from krumpa.core import Finding, Severity, Target
+from krumpa.core.http_client import HttpClientMixin
 
 logger = logging.getLogger("krumpa.waaaghlogic.pagination")
 
@@ -28,7 +29,7 @@ class PaginationResult:
     rate_limited: bool = False
 
 
-class PaginationTester:
+class PaginationTester(HttpClientMixin):
     """Test pagination controls and rate limit enforcement."""
 
     def __init__(self, http_client: Any = None) -> None:
@@ -101,7 +102,7 @@ class PaginationTester:
         # Test rate limiting
         rate_limited = False
         start = time.monotonic()
-        for i in range(50):
+        for _i in range(50):
             try:
                 resp = await self._client.request(method="GET", url=target.url)
                 if resp.status_code == 429:

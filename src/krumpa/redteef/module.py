@@ -9,7 +9,7 @@ from typing import Dict, List, Optional
 
 from krumpa.core import BaseModule, Finding, ScanContext, Severity, Target
 from krumpa.core.http_client import HttpClient
-from krumpa.redteef.confirmer import Confirmer, ConfirmationResult, ConfirmationVerdict
+from krumpa.redteef.confirmer import Confirmer, ConfirmationResult
 from krumpa.redteef.payload_builder import PayloadBuilder, ProofPayload
 from krumpa.redteef.blind_sqli import BlindSqliConfirmer
 from krumpa.redteef.env_payloads import EnvironmentPayloadSelector
@@ -66,30 +66,18 @@ class RedTeefModule(BaseModule):
     async def setup(self, ctx: ScanContext) -> None:
         """Wire shared HTTP client into confirmer if no explicit client."""
         if ctx.http_client and not self._explicit_client:
-            self._confirmer._client = ctx.http_client
-            self._confirmer._owns_client = False
-            self._blind_sqli._client = ctx.http_client
-            self._blind_sqli._owns_client = False
-            self._error_sqli._client = ctx.http_client
-            self._error_sqli._owns_client = False
-            self._path_traversal._client = ctx.http_client
-            self._path_traversal._owns_client = False
-            self._open_redirect._client = ctx.http_client
-            self._open_redirect._owns_client = False
-            self._blind_xss._client = ctx.http_client
-            self._blind_xss._owns_client = False
-            self._ssrf._client = ctx.http_client
-            self._ssrf._owns_client = False
-            self._xxe._client = ctx.http_client
-            self._xxe._owns_client = False
-            self._deser_confirmer._client = ctx.http_client
-            self._deser_confirmer._owns_client = False
-            self._polyglot._client = ctx.http_client
-            self._polyglot._owns_client = False
-            self._regression._client = ctx.http_client
-            self._regression._owns_client = False
-            self._exploit_chains._client = ctx.http_client
-            self._exploit_chains._owns_client = False
+            self._confirmer.set_client(ctx.http_client)
+            self._blind_sqli.set_client(ctx.http_client)
+            self._error_sqli.set_client(ctx.http_client)
+            self._path_traversal.set_client(ctx.http_client)
+            self._open_redirect.set_client(ctx.http_client)
+            self._blind_xss.set_client(ctx.http_client)
+            self._ssrf.set_client(ctx.http_client)
+            self._xxe.set_client(ctx.http_client)
+            self._deser_confirmer.set_client(ctx.http_client)
+            self._polyglot.set_client(ctx.http_client)
+            self._regression.set_client(ctx.http_client)
+            self._exploit_chains.set_client(ctx.http_client)
 
     # ------------------------------------------------------------------
     # Module lifecycle

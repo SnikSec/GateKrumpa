@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import urljoin
 
 from krumpa.core import Finding, Severity, Target
+from krumpa.core.http_client import HttpClientMixin
 
 logger = logging.getLogger("krumpa.openkrump.validation_gaps")
 
@@ -38,7 +39,7 @@ class ValidationGap:
     response: str = ""
 
 
-class ValidationGapDetector:
+class ValidationGapDetector(HttpClientMixin):
     """Detect gaps between API spec constraints and server enforcement.
 
     Extracts parameter/schema constraints from the spec (minLength,

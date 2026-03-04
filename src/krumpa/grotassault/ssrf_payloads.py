@@ -12,13 +12,13 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
-from urllib.parse import urlparse, urlencode
+from typing import List, Optional
+from urllib.parse import urlparse
 
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.grotassault.ssrf")
 
@@ -119,7 +119,7 @@ _INTERNAL_SERVICE_PATTERNS = [
 # ---------------------------------------------------------------------------
 
 @dataclass
-class SsrfResult:
+class SsrfResult(HttpClientMixin):
     """Result of a single SSRF payload probe."""
     payload_category: str
     payload_url: str
@@ -130,7 +130,7 @@ class SsrfResult:
     internal_service_reached: bool = False
 
 
-class SsrfChecker:
+class SsrfChecker(HttpClientMixin):
     """Test endpoints for Server-Side Request Forgery vulnerabilities.
 
     Injects SSRF payloads into URL-type parameters and analyses responses

@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 from krumpa.core import Finding, Severity, Target
+from krumpa.core.http_client import HttpClientMixin
 
 
 @dataclass
@@ -22,7 +23,7 @@ class SessionInfo:
     is_valid: bool = True
 
 
-class ConcurrentSessionTester:
+class ConcurrentSessionTester(HttpClientMixin):
     """Test concurrent session policies for security issues.
 
     Checks:

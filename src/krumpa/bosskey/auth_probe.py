@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.bosskey.auth_probe")
 
@@ -67,7 +67,7 @@ DEFAULT_CREDS: List[Tuple[str, str]] = load_credentials()
 # ---------------------------------------------------------------------------
 
 @dataclass
-class AuthEndpoint:
+class AuthEndpoint(HttpClientMixin):
     """Description of a login / token endpoint to probe."""
     url: str
     method: str = "POST"
@@ -83,7 +83,7 @@ class AuthEndpoint:
 # AuthProbe
 # ---------------------------------------------------------------------------
 
-class AuthProbe:
+class AuthProbe(HttpClientMixin):
     """
     Probe authentication endpoints for common weaknesses.
 

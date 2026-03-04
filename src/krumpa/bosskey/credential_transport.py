@@ -11,13 +11,13 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Dict, List, Optional
+from typing import List, Optional
 from urllib.parse import parse_qs, urlparse
 
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ _SENSITIVE_HEADERS = frozenset({
 })
 
 
-class CredentialTransportAuditor:
+class CredentialTransportAuditor(HttpClientMixin):
     """
     Audit credential transport security:
       1. HTTP→HTTPS redirect enforcement (no plaintext creds)

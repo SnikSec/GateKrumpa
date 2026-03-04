@@ -13,7 +13,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 from enum import IntEnum
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from krumpa.core import Finding, Severity
 

@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 from krumpa.core import Finding, Severity, Target
+from krumpa.core.http_client import HttpClientMixin
 
 
 # ------------------------------------------------------------------
@@ -67,7 +68,7 @@ COUPON_ABUSE_PAYLOADS = [
 ]
 
 
-class WorkflowIntegrityTester:
+class WorkflowIntegrityTester(HttpClientMixin):
     """Test payment and business workflow integrity.
 
     Attacks:

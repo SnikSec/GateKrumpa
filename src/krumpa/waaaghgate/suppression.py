@@ -13,7 +13,7 @@ import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Dict, List, Optional, Union
 
 from krumpa.core import Finding
 
@@ -213,7 +213,7 @@ class SuppressionManager:
     @staticmethod
     def _parse_yaml(text: str) -> List[SuppressionRule]:
         try:
-            import yaml  # type: ignore
+            import yaml
             data = yaml.safe_load(text) or {}
         except ImportError:
             try:

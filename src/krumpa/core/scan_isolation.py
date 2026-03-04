@@ -200,7 +200,7 @@ class ScanIsolationManager:
             if not scan:
                 continue
             for f in scan.context.findings:
-                key = ScanContext._finding_key(f)
+                key = ScanContext.finding_key(f)
                 if key not in seen_keys:
                     seen_keys.add(key)
                     all_findings.append(f)

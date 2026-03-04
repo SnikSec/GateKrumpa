@@ -8,9 +8,8 @@ posted via the respective platform APIs.
 
 from __future__ import annotations
 
-import json
 import logging
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 from krumpa.core import Finding, Severity

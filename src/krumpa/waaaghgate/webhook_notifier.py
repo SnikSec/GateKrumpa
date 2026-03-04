@@ -167,7 +167,7 @@ class WebhookNotifier:
     ) -> Dict[str, Any]:
         """Build Microsoft Teams Adaptive Card."""
         gate_status = "PASSED" if summary["gate_passed"] else "FAILED"
-        color = "good" if summary["gate_passed"] else "attention"
+        _color = "good" if summary["gate_passed"] else "attention"
 
         facts = [
             {"name": "Gate Status", "value": gate_status},

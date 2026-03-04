@@ -10,16 +10,16 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import Any, List, Optional
+from typing import List, Optional
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.bosskey.session_timeout")
 
 
 @dataclass
-class TimeoutTestResult:
+class TimeoutTestResult(HttpClientMixin):
     """Result of a timeout / invalidation test."""
     test_name: str
     endpoint: str
@@ -27,7 +27,7 @@ class TimeoutTestResult:
     detail: str = ""
 
 
-class SessionTimeoutTester:
+class SessionTimeoutTester(HttpClientMixin):
     """
     Test session timeout and invalidation behaviour.
     """

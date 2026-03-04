@@ -10,10 +10,11 @@ from __future__ import annotations
 import hashlib
 import logging
 import time
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
 from krumpa.core import Finding, Severity, Target
+from krumpa.core.http_client import HttpClientMixin
 
 logger = logging.getLogger("krumpa.grotassault.blind_oob")
 
@@ -37,7 +38,7 @@ class OobPayload:
     description: str
 
 
-class BlindOobDetector:
+class BlindOobDetector(HttpClientMixin):
     """
     Generate blind injection payloads with OOB (out-of-band) callbacks
     and check a collaborator server for interactions.
@@ -136,7 +137,7 @@ class BlindOobDetector:
                     await self._client.request(
                         method=target.method,
                         url=target.url,
-                        json=body,
+                        json_body=body,
                     )
                 else:
                     await self._client.request(

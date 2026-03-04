@@ -17,7 +17,7 @@ from typing import Dict, List, Optional
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.redteef.blind_xss_confirmer")
 
@@ -88,7 +88,7 @@ _INJECTABLE_FIELDS = [
 ]
 
 
-class BlindXssConfirmer:
+class BlindXssConfirmer(HttpClientMixin):
     """
     Confirm blind/stored XSS by:
       1. Injecting callback-bearing payloads into various fields

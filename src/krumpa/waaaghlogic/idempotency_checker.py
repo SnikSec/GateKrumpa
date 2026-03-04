@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.waaaghlogic.idempotency")
 
@@ -27,7 +27,7 @@ logger = logging.getLogger("krumpa.waaaghlogic.idempotency")
 # ------------------------------------------------------------------
 
 @dataclass
-class _RaceResult:
+class _RaceResult(HttpClientMixin):
     """Aggregated outcome of concurrent requests."""
     total: int
     succeeded: int
@@ -39,7 +39,7 @@ class _RaceResult:
 # IdempotencyChecker
 # ------------------------------------------------------------------
 
-class IdempotencyChecker:
+class IdempotencyChecker(HttpClientMixin):
     """
     Test endpoints for idempotency and race-condition vulnerabilities.
 

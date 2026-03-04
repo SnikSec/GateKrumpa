@@ -8,11 +8,11 @@ from a configurable wordlist to find hidden or unlinked resources.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
-from typing import Any, List, Optional, Set
+from dataclasses import dataclass
+from typing import List, Optional, Set
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.sneakygits.content_discovery")
 
@@ -71,7 +71,7 @@ DEFAULT_WORDLIST: List[str] = [
 
 
 @dataclass
-class DiscoveryResult:
+class DiscoveryResult(HttpClientMixin):
     """A single discovered path and its response metadata."""
     url: str
     status_code: int
@@ -81,7 +81,7 @@ class DiscoveryResult:
     interesting: bool = False
 
 
-class ContentDiscovery:
+class ContentDiscovery(HttpClientMixin):
     """
     Brute-force common paths against a target host and report
     any that return non-404 responses.

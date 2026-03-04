@@ -19,12 +19,12 @@ from urllib.parse import urlparse
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.sneakygits.cors")
 
 
-class CorsChecker:
+class CorsChecker(HttpClientMixin):
     """
     Test a target for CORS misconfiguration.
 

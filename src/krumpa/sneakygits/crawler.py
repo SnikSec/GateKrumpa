@@ -16,7 +16,7 @@ from urllib.parse import urljoin, urlparse
 
 import httpx
 
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.sneakygits.crawler")
 
@@ -38,7 +38,7 @@ _SKIP_EXTENSIONS = frozenset({
 })
 
 
-class Crawler:
+class Crawler(HttpClientMixin):
     """
     Async link crawler that discovers endpoints reachable from a seed URL.
 
@@ -299,7 +299,7 @@ class Crawler:
 # Internal data
 # ------------------------------------------------------------------
 
-class _CrawlItem:
+class _CrawlItem(HttpClientMixin):
     """Lightweight queue item."""
     __slots__ = ("url", "depth")
 

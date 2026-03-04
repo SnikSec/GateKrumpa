@@ -20,7 +20,7 @@ from typing import Any, Dict, List, Optional
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 from krumpa.grotassault.mutator import Mutator
 
 logger = logging.getLogger("krumpa.grotassault.fuzzer")
@@ -51,7 +51,7 @@ _REFLECTION_MIN_LENGTH = 6  # only flag reflected strings of this length+
 # ------------------------------------------------------------------
 
 @dataclass
-class FuzzTarget:
+class FuzzTarget(HttpClientMixin):
     """Specification for a fuzz target."""
     url: str
     method: str = "POST"
@@ -63,7 +63,7 @@ class FuzzTarget:
 
 
 @dataclass
-class _FuzzResult:
+class _FuzzResult(HttpClientMixin):
     """Internal result of a single fuzz request."""
     payload: Any
     field: str
@@ -78,7 +78,7 @@ class _FuzzResult:
 # Fuzzer
 # ------------------------------------------------------------------
 
-class Fuzzer:
+class Fuzzer(HttpClientMixin):
     """
     Send mutated payloads and detect anomalies.
 

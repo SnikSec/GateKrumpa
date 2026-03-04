@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from krumpa.core import Finding, Severity, Target
+from krumpa.core.http_client import HttpClientMixin
 
 
 # ------------------------------------------------------------------
@@ -136,7 +137,7 @@ NS_MAP = {
 # Analyzer
 # ------------------------------------------------------------------
 
-class SamlAnalyzer:
+class SamlAnalyzer(HttpClientMixin):
     """Analyze SAML implementations for common security vulnerabilities.
 
     Checks include:

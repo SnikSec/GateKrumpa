@@ -13,6 +13,7 @@ from typing import Any, List
 from urllib.parse import urlparse
 
 from krumpa.core import Finding, Severity, Target
+from krumpa.core.http_client import HttpClientMixin
 
 logger = logging.getLogger("krumpa.openkrump.webhook_security")
 
@@ -88,7 +89,7 @@ WEBHOOK_PATHS = [
 ]
 
 
-class WebhookSecurityAnalyzer:
+class WebhookSecurityAnalyzer(HttpClientMixin):
     """Analyze webhook/callback endpoint security.
 
     Tests:

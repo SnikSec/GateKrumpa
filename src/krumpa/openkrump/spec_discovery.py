@@ -14,13 +14,13 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 from urllib.parse import urljoin
 
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.openkrump.spec_discovery")
 
@@ -61,7 +61,7 @@ _SPEC_PATHS: List[Dict[str, str]] = [
 ]
 
 
-class SpecDiscovery:
+class SpecDiscovery(HttpClientMixin):
     """Auto-discover API specification endpoints."""
 
     def __init__(
@@ -82,7 +82,7 @@ class SpecDiscovery:
         findings: List[Finding] = []
         discovered_specs: List[Dict[str, str]] = []
         client = self._client or HttpClient(timeout=10.0, retries=1)
-        t = target or Target(url=base_url)
+        _t = target or Target(url=base_url)
 
         try:
             for entry in _SPEC_PATHS:

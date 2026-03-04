@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set
 
 from krumpa.core import Finding, Severity, Target
+from krumpa.core.http_client import HttpClientMixin
 
 
 # ------------------------------------------------------------------
@@ -59,7 +60,7 @@ REMEMBER_ME_NAMES = [
 ]
 
 
-class RememberMeAnalyzer:
+class RememberMeAnalyzer(HttpClientMixin):
     """Analyze remember-me token implementations for security issues.
 
     Checks:

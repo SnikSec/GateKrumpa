@@ -11,10 +11,11 @@ from __future__ import annotations
 
 import logging
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from krumpa.core import Finding, Severity, Target
+from krumpa.core.http_client import HttpClientMixin
 
 logger = logging.getLogger("krumpa.grotassault.smuggling")
 
@@ -34,7 +35,7 @@ class SmugglingResult:
 _TIMING_THRESHOLD_MS = 5000.0
 
 
-class HttpSmugglingChecker:
+class HttpSmugglingChecker(HttpClientMixin):
     """
     Detect HTTP request smuggling via timing-based probes.
 
@@ -64,7 +65,7 @@ class HttpSmugglingChecker:
 
         findings: List[Finding] = []
 
-        for technique, probe_fn in [
+        for _technique, probe_fn in [
             ("CL.TE", self._probe_cl_te),
             ("TE.CL", self._probe_te_cl),
             ("TE.TE", self._probe_te_te),
@@ -118,7 +119,7 @@ class HttpSmugglingChecker:
             )
 
         # Check server header for known multi-tier setups
-        server = headers.get("server", headers.get("Server", "")).lower()
+        _server = headers.get("server", headers.get("Server", "")).lower()
         via = headers.get("via", headers.get("Via", "")).lower()
 
         if via:
@@ -211,6 +212,8 @@ class HttpSmugglingChecker:
         payload: Dict[str, Any],
     ) -> Optional[SmugglingResult]:
         """Send a smuggling probe and measure timing."""
+        if not self._client:
+            return None
         try:
             headers = payload.get("headers", {})
             body = payload.get("body", "")
@@ -220,7 +223,7 @@ class HttpSmugglingChecker:
                 method="POST",
                 url=target.url,
                 headers=headers,
-                content=body.encode() if isinstance(body, str) else body,
+                body=body.encode() if isinstance(body, str) else body,
             )
             elapsed_ms = (time.monotonic() - start) * 1000
 

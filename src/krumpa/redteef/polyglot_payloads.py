@@ -15,13 +15,13 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.redteef.polyglot_payloads")
 
 
 @dataclass
-class PolyglotPayload:
+class PolyglotPayload(HttpClientMixin):
     """A payload that targets multiple vulnerability classes at once."""
     label: str
     payload: str
@@ -141,7 +141,7 @@ _POLYGLOTS: List[PolyglotPayload] = [
 
 
 @dataclass
-class PolyglotResult:
+class PolyglotResult(HttpClientMixin):
     """Result of testing a single polyglot payload."""
     payload: PolyglotPayload
     triggered_classes: Set[str] = field(default_factory=set)
@@ -150,7 +150,7 @@ class PolyglotResult:
     response_time: float = 0.0
 
 
-class PolyglotPayloadTester:
+class PolyglotPayloadTester(HttpClientMixin):
     """
     Test endpoints with polyglot payloads that cover multiple
     vulnerability classes in a single request.

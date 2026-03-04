@@ -8,8 +8,8 @@ spec and flags discrepancies as potential security or quality issues.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass
+from typing import Any, Dict, List
 
 from krumpa.core import Finding, Severity, Target
 from krumpa.openkrump.parser import ParsedEndpoint

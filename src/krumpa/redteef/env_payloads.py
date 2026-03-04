@@ -8,11 +8,10 @@ payloads for the target's technology stack (DB, framework, OS).
 from __future__ import annotations
 
 import logging
-import re
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set
+from typing import Dict, List, Set
 
-from krumpa.core import Finding, ScanContext, Target
+from krumpa.core import ScanContext, Target
 
 logger = logging.getLogger("krumpa.redteef.env_payloads")
 

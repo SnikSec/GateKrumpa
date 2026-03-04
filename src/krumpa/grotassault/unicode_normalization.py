@@ -10,14 +10,13 @@ CWE-180: Incorrect Behavior Order: Validate Before Canonicalize
 from __future__ import annotations
 
 import logging
-import unicodedata
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import List, Optional
 
 import httpx
 
 from krumpa.core import Finding, Severity, Target
-from krumpa.core.http_client import HttpClient
+from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +26,7 @@ logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------
 
 @dataclass
-class UnicodeTrick:
+class UnicodeTrick(HttpClientMixin):
     """A single Unicode-based bypass payload."""
     label: str
     payload: str
@@ -137,7 +136,7 @@ _OVERLONG_TRICKS: List[UnicodeTrick] = [
 ALL_TRICKS = _HOMOGLYPH_TRICKS + _NFKC_TRICKS + _CASE_FOLD_TRICKS + _WIDTH_TRICKS + _OVERLONG_TRICKS
 
 
-class UnicodeNormalizationChecker:
+class UnicodeNormalizationChecker(HttpClientMixin):
     """
     Tests whether Unicode normalization occurs after security
     filtering, enabling filter bypass.

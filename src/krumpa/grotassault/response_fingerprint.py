@@ -13,9 +13,9 @@ import hashlib
 import json
 import logging
 import re
-from collections import Counter, defaultdict
+from collections import Counter
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Sequence, Tuple
 
 from krumpa.core import Finding, Severity, Target
 
