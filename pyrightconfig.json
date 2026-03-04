@@ -1,6 +1,6 @@
 {
   "include": ["src"],
-  "exclude": ["**/__pycache__"],
+  "exclude": ["**/__pycache__", "**/node_modules", "**/.venv", ".venv", "**/.*"],
   "pythonVersion": "3.11",
   "pythonPlatform": "All",
   "typeCheckingMode": "standard",
