@@ -22,6 +22,7 @@ from krumpa.waaaghlogic.state_machine import StateMachineTester
 from krumpa.waaaghlogic.graphql_logic import GraphqlLogicTester
 from krumpa.waaaghlogic.workflow_integrity import WorkflowIntegrityTester
 from krumpa.waaaghlogic.currency_rounding import CurrencyRoundingTester
+from krumpa.waaaghlogic.rate_limit_tester import RateLimitTester, RateLimitTarget
 
 logger = logging.getLogger("krumpa.waaaghlogic")
 
@@ -55,6 +56,7 @@ class WaaaghLogicModule(BaseModule):
         self._graphql_logic = GraphqlLogicTester()
         self._workflow_integrity = WorkflowIntegrityTester()
         self._currency_rounding = CurrencyRoundingTester()
+        self._rate_limit = RateLimitTester(concurrency=concurrency)
         self._workflows = workflows or []
         self._idempotency_targets = idempotency_targets or []
 
@@ -75,6 +77,7 @@ class WaaaghLogicModule(BaseModule):
             self._graphql_logic.set_client(ctx.http_client)
             self._workflow_integrity.set_client(ctx.http_client)
             self._currency_rounding.set_client(ctx.http_client)
+            self._rate_limit.set_client(ctx.http_client)
 
     async def run(self, ctx: ScanContext) -> List[Finding]:
         findings: List[Finding] = []
@@ -212,6 +215,25 @@ class WaaaghLogicModule(BaseModule):
                 logger.info("Testing currency rounding on %s", target.url)
                 cr_findings = await self._currency_rounding.analyze(target)
                 findings.extend(cr_findings)
+
+        # --- Business-layer rate-limit testing -------------------------
+        _RATE_LIMIT_HINTS = (
+            "/login", "/signin", "/auth",
+            "/password", "/reset", "/change-password",
+            "/otp", "/sms", "/verify", "/2fa", "/mfa",
+            "/purchase", "/buy", "/order", "/checkout",
+            "/transfer", "/send", "/withdraw",
+            "/register", "/signup", "/invite",
+            "/coupon", "/redeem", "/voucher",
+        )
+        for target in ctx.targets:
+            if target.method.upper() in ("POST", "PUT", "PATCH") and any(
+                h in target.url.lower() for h in _RATE_LIMIT_HINTS
+            ):
+                logger.info("Testing rate limiting on %s %s", target.method, target.url)
+                rt = RateLimitTarget(url=target.url, method=target.method)
+                rl_findings = await self._rate_limit.test([rt], target)
+                findings.extend(rl_findings)
 
         for f in findings:
             self.add_finding(f)

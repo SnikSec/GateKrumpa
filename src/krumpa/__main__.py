@@ -11,6 +11,7 @@ Usage:
 from __future__ import annotations
 
 import asyncio
+import inspect
 import json
 import logging
 import sys
@@ -176,16 +177,53 @@ def scan(
 
 
 def _module_kwargs(name: str, config: dict, *, spec: Optional[str] = None) -> dict:
-    """Extract constructor kwargs for a module from the config dict."""
-    # Module-specific config lives under config[module_name]
-    _mod_config = config.get(name, {})
+    """Extract constructor kwargs for a module from the config dict.
+
+    Reads ``config[name]`` (the per-module YAML section) and forwards
+    every key whose name matches a constructor parameter of the target
+    module class.  Keys that don't correspond to a constructor param
+    are silently ignored so the config file is forward-compatible.
+
+    Known key aliases (YAML name → constructor param) are handled
+    automatically, e.g. ``strict_mode`` → ``strict``.
+    """
+    # Keys that should never be forwarded — they are injected at runtime
+    _RUNTIME_ONLY = frozenset({"http_client", "reporter"})
+
+    # YAML key → constructor param name (for config/code name mismatches)
+    _KEY_ALIASES: dict[str, dict[str, str]] = {
+        "openkrump": {"strict_mode": "strict"},
+    }
+
+    mod_config: dict = dict(config.get(name, {}))
     kwargs: dict = {}
 
+    # CLI-level overrides
     if name == "openkrump" and spec:
         kwargs["spec_url"] = spec
 
-    # Pass through recognized keys from config
-    # (Modules ignore unknown kwargs via **kwargs or specific params)
+    if not mod_config:
+        return kwargs
+
+    # Discover which params the module constructor actually accepts
+    cls = _load_module_class(name)
+    sig = inspect.signature(cls.__init__)
+    valid_params = {
+        p.name for p in sig.parameters.values()
+        if p.name != "self"
+    } - _RUNTIME_ONLY
+
+    # Apply aliases for this module
+    aliases = _KEY_ALIASES.get(name, {})
+    for yaml_key, param_name in aliases.items():
+        if yaml_key in mod_config and param_name not in mod_config:
+            mod_config[param_name] = mod_config.pop(yaml_key)
+
+    # Forward matching keys
+    for key, value in mod_config.items():
+        if key in valid_params and key not in kwargs:
+            kwargs[key] = value
+
     return kwargs
 
 

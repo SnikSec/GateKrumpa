@@ -5,7 +5,7 @@ Thin wrapper around ``httpx`` providing:
   - Rate-limiting
   - Retry logic
   - Request/response logging
-  - Proxy support
+  - Proxy support (HTTP, HTTPS, SOCKS5, chain)
   - Scope enforcement  (via :class:`ScopeManager`)
   - Auth injection      (via :class:`AuthProvider`)
   - Traffic recording   (via :class:`RequestRecorder`)
@@ -17,7 +17,7 @@ import asyncio
 import ipaddress
 import logging
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Sequence
 from urllib.parse import urlparse
 
 import httpx
@@ -32,6 +32,10 @@ _DEFAULT_TIMEOUT = 30.0
 _DEFAULT_RETRIES = 3
 _DEFAULT_BACKOFF = 1.0
 _DEFAULT_MAX_REDIRECTS = 10
+
+# Supported proxy URL schemes
+_SUPPORTED_PROXY_SCHEMES = frozenset({"http", "https", "socks5", "socks5h", "socks4"})
+
 
 # Query parameter names whose values are redacted in debug logs
 _SENSITIVE_PARAMS = frozenset({
@@ -80,6 +84,7 @@ class HttpClient:
         retries: int = _DEFAULT_RETRIES,
         backoff: float = _DEFAULT_BACKOFF,
         proxy: Optional[str] = None,
+        proxy_chain: Optional[Sequence[str]] = None,
         headers: Optional[Dict[str, str]] = None,
         verify_ssl: bool = True,
         ca_bundle: Optional[str] = None,
@@ -98,7 +103,10 @@ class HttpClient:
                 "connections are vulnerable to MitM attacks"
             )
 
-        # Build SSL / verify parameter ----------------------------------
+        # -- Resolve proxy / proxy chain ---------------------------------
+        effective_proxy = self._resolve_proxy(proxy, proxy_chain)
+
+        # -- Build SSL / verify parameter --------------------------------
         # Priority: ca_bundle → verify_ssl bool
         ssl_verify: Any = verify_ssl
         if ca_bundle:
@@ -124,8 +132,8 @@ class HttpClient:
             ssl_verify = ssl_ctx
 
         transport_kwargs: Dict[str, Any] = {"retries": retries}
-        if proxy:
-            transport_kwargs["proxy"] = proxy
+        if effective_proxy:
+            transport_kwargs["proxy"] = effective_proxy
 
         self._client = httpx.AsyncClient(
             timeout=timeout,
@@ -135,6 +143,7 @@ class HttpClient:
             max_redirects=max_redirects,
             transport=httpx.AsyncHTTPTransport(**transport_kwargs),
         )
+        self._proxy_chain: List[str] = list(proxy_chain) if proxy_chain else ([proxy] if proxy else [])
         self._allow_private_networks = allow_private_networks
         self._backoff = backoff
         self._rate_limit = rate_limit
@@ -218,7 +227,61 @@ class HttpClient:
     async def close(self) -> None:
         await self._client.aclose()
 
+    @property
+    def active_proxy_chain(self) -> List[str]:
+        """Return the configured proxy chain (may be empty)."""
+        return list(self._proxy_chain)
+
     # -- internal -----------------------------------------------------------
+
+    @staticmethod
+    def _resolve_proxy(
+        proxy: Optional[str],
+        proxy_chain: Optional[Sequence[str]],
+    ) -> Optional[str]:
+        """Resolve *proxy* and *proxy_chain* into a single effective proxy URL.
+
+        * If *proxy_chain* is provided, its **last** entry is used as the
+          immediate upstream proxy (httpx supports a single hop).  The full
+          chain is logged for visibility so operators know the intended path.
+        * If only *proxy* is given, it is used directly.
+        * If both are provided, *proxy_chain* wins and *proxy* is ignored.
+
+        Raises :class:`ValueError` for unsupported proxy schemes.
+        """
+        chain: List[str] = []
+        if proxy_chain:
+            chain = list(proxy_chain)
+        elif proxy:
+            chain = [proxy]
+
+        if not chain:
+            return None
+
+        # Validate all URLs in the chain
+        for url in chain:
+            scheme = urlparse(url).scheme.lower()
+            if scheme not in _SUPPORTED_PROXY_SCHEMES:
+                raise ValueError(
+                    f"Unsupported proxy scheme {scheme!r} in {url!r}. "
+                    f"Supported: {', '.join(sorted(_SUPPORTED_PROXY_SCHEMES))}"
+                )
+
+        if len(chain) > 1:
+            logger.info(
+                "Proxy chain configured (%d hops): %s",
+                len(chain),
+                " → ".join(chain),
+            )
+            logger.info(
+                "Using outermost proxy as immediate upstream: %s",
+                chain[-1],
+            )
+        else:
+            logger.info("Proxy configured: %s", chain[0])
+
+        # Return the outermost proxy — the one httpx actually connects to
+        return chain[-1]
 
     def _validate_url(self, url: str) -> None:
         """Block requests to private/reserved IP ranges unless explicitly allowed."""
