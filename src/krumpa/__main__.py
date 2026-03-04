@@ -635,6 +635,8 @@ def mcp_serve(config_path: Optional[str]) -> None:
     Credential references (``${VAR}``, ``vault://``) in the config are
     resolved before any tool handler runs — agents never see raw secrets.
 
+    Built on the official ``mcp`` Python SDK (FastMCP).
+
     Example MCP client config (Claude Desktop, VS Code, etc.)::
 
         {
@@ -646,7 +648,7 @@ def mcp_serve(config_path: Optional[str]) -> None:
           }
         }
     """
-    from krumpa.mcp.server import McpServer
+    from krumpa.mcp.server import create_server
     from krumpa.mcp.tools import register_default_tools
 
     config = _load_config(config_path)
@@ -655,11 +657,11 @@ def mcp_serve(config_path: Optional[str]) -> None:
     cred_provider = build_provider(config)
     config = _resolve_creds(config, cred_provider)
 
-    server = McpServer(config=config)
+    server = create_server(config=config)
     register_default_tools(server, config)
 
     click.echo("GateKrumpa MCP server starting (stdio)…", err=True)
-    asyncio.run(server.run())
+    server.run(transport="stdio")
 
 
 # ------------------------------------------------------------------
