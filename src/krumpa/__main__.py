@@ -11,6 +11,7 @@ Usage:
 from __future__ import annotations
 
 import asyncio
+import inspect
 import json
 import logging
 import sys
@@ -21,7 +22,7 @@ import click
 
 from krumpa.core import ScanContext, Target
 from krumpa.core.engine import ScanEngine
-from krumpa.core.reporting import to_json, to_sarif, to_markdown
+from krumpa.core.reporting import to_json, to_sarif, to_markdown, to_html, to_junit
 
 
 # ------------------------------------------------------------------
@@ -89,6 +90,61 @@ def _setup_logging(verbose: int) -> None:
     )
 
 
+def _collect_targets(
+    cli_targets: tuple[str, ...],
+    targets_file: Optional[str],
+    config: dict,
+) -> list[Target]:
+    """Merge targets from CLI flags, a file, and the config YAML.
+
+    Sources (in priority order — all are merged, no override):
+      1. ``--target`` CLI flags (repeatable)
+      2. ``--targets-file`` (one URL per line)
+      3. ``campaign.targets`` list in the config file (each entry is
+         either a URL string or a dict with ``url``, ``method``, etc.)
+
+    Returns a deduplicated list of :class:`Target` objects.
+    """
+    seen: set[str] = set()
+    result: list[Target] = []
+
+    def _add(t: Target) -> None:
+        key = f"{t.method}:{t.url}"
+        if key not in seen:
+            seen.add(key)
+            result.append(t)
+
+    # 1. CLI --target flags
+    for url in cli_targets:
+        _add(Target(url=url.strip()))
+
+    # 2. Targets file
+    if targets_file:
+        p = Path(targets_file)
+        if not p.exists():
+            raise click.BadParameter(f"Targets file not found: {targets_file}")
+        for line in p.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line and not line.startswith("#"):
+                _add(Target(url=line))
+
+    # 3. Config campaign.targets
+    campaign_targets = config.get("campaign", {}).get("targets", [])
+    for entry in campaign_targets:
+        if isinstance(entry, str):
+            _add(Target(url=entry))
+        elif isinstance(entry, dict) and "url" in entry:
+            _add(Target(
+                url=entry["url"],
+                method=entry.get("method", "GET"),
+                headers=entry.get("headers", {}),
+                body=entry.get("body"),
+                metadata=entry.get("metadata", {}),
+            ))
+
+    return result
+
+
 # ------------------------------------------------------------------
 # CLI group
 # ------------------------------------------------------------------
@@ -106,7 +162,14 @@ def cli(verbose: int) -> None:
 # ------------------------------------------------------------------
 
 @cli.command()
-@click.option("--target", "-t", required=True, help="Base URL to scan.")
+@click.option(
+    "--target", "-t", "targets", multiple=True,
+    help="Base URL(s) to scan (repeatable: -t URL1 -t URL2).",
+)
+@click.option(
+    "--targets-file", "targets_file", default=None,
+    help="Path to a file with one target URL per line.",
+)
 @click.option(
     "--modules", "-m", default=None,
     help="Comma-separated module names (default: all in pipeline order).",
@@ -115,19 +178,28 @@ def cli(verbose: int) -> None:
 @click.option("--spec", default=None, help="OpenAPI spec URL (passed to openkrump).")
 @click.option(
     "--format", "-f", "formats", default="json",
-    help="Comma-separated output formats: json, sarif, markdown (default: json).",
+    help="Comma-separated output formats: json, sarif, markdown, html, junit (default: json).",
 )
 @click.option("--output", "-o", default=None, help="Output directory for reports (default: stdout).")
 def scan(
-    target: str,
+    targets: tuple[str, ...],
+    targets_file: Optional[str],
     modules: Optional[str],
     config_path: Optional[str],
     spec: Optional[str],
     formats: str,
     output: Optional[str],
 ) -> None:
-    """Run a security scan against a target URL."""
+    """Run a security scan against one or more target URLs."""
     config = _load_config(config_path)
+
+    # Collect all targets: CLI flags + file + config
+    all_targets = _collect_targets(targets, targets_file, config)
+    if not all_targets:
+        raise click.UsageError(
+            "No targets specified. Use --target, --targets-file, "
+            "or add campaign.targets in the config file."
+        )
 
     # Determine modules
     if modules:
@@ -142,7 +214,8 @@ def scan(
 
     # Build context
     ctx = ScanContext(config=config)
-    ctx.add_target(Target(url=target))
+    for t in all_targets:
+        ctx.add_target(t)
 
     # Build engine
     engine = ScanEngine(ctx=ctx)
@@ -151,7 +224,11 @@ def scan(
         kwargs = _module_kwargs(name, config, spec=spec)
         engine.register(cls(**kwargs))
 
-    click.echo(f"Starting scan against {target}")
+    target_summary = ", ".join(t.url for t in all_targets[:5])
+    if len(all_targets) > 5:
+        target_summary += f" (+{len(all_targets) - 5} more)"
+    click.echo(f"Starting scan against {target_summary}")
+    click.echo(f"Targets: {len(all_targets)}")
     click.echo(f"Modules: {', '.join(module_names)}")
     click.echo(f"Formats: {', '.join(format_list)}")
     click.echo("---")
@@ -176,16 +253,53 @@ def scan(
 
 
 def _module_kwargs(name: str, config: dict, *, spec: Optional[str] = None) -> dict:
-    """Extract constructor kwargs for a module from the config dict."""
-    # Module-specific config lives under config[module_name]
-    _mod_config = config.get(name, {})
+    """Extract constructor kwargs for a module from the config dict.
+
+    Reads ``config[name]`` (the per-module YAML section) and forwards
+    every key whose name matches a constructor parameter of the target
+    module class.  Keys that don't correspond to a constructor param
+    are silently ignored so the config file is forward-compatible.
+
+    Known key aliases (YAML name → constructor param) are handled
+    automatically, e.g. ``strict_mode`` → ``strict``.
+    """
+    # Keys that should never be forwarded — they are injected at runtime
+    _RUNTIME_ONLY = frozenset({"http_client", "reporter"})
+
+    # YAML key → constructor param name (for config/code name mismatches)
+    _KEY_ALIASES: dict[str, dict[str, str]] = {
+        "openkrump": {"strict_mode": "strict"},
+    }
+
+    mod_config: dict = dict(config.get(name, {}))
     kwargs: dict = {}
 
+    # CLI-level overrides
     if name == "openkrump" and spec:
         kwargs["spec_url"] = spec
 
-    # Pass through recognized keys from config
-    # (Modules ignore unknown kwargs via **kwargs or specific params)
+    if not mod_config:
+        return kwargs
+
+    # Discover which params the module constructor actually accepts
+    cls = _load_module_class(name)
+    sig = inspect.signature(cls.__init__)
+    valid_params = {
+        p.name for p in sig.parameters.values()
+        if p.name != "self"
+    } - _RUNTIME_ONLY
+
+    # Apply aliases for this module
+    aliases = _KEY_ALIASES.get(name, {})
+    for yaml_key, param_name in aliases.items():
+        if yaml_key in mod_config and param_name not in mod_config:
+            mod_config[param_name] = mod_config.pop(yaml_key)
+
+    # Forward matching keys
+    for key, value in mod_config.items():
+        if key in valid_params and key not in kwargs:
+            kwargs[key] = value
+
     return kwargs
 
 
@@ -205,6 +319,12 @@ def _write_reports(ctx: ScanContext, formats: list[str], output_dir: Optional[st
         elif fmt == "markdown":
             content = to_markdown(ctx)
             ext = "md"
+        elif fmt == "html":
+            content = to_html(ctx)
+            ext = "html"
+        elif fmt == "junit":
+            content = to_junit(ctx)
+            ext = "junit.xml"
         else:
             click.echo(f"Unknown format: {fmt!r} — skipping", err=True)
             continue
@@ -258,7 +378,7 @@ def modules_info(module_name: str) -> None:
 @click.option("--input", "-i", "input_path", required=True, help="Path to JSON scan results.")
 @click.option(
     "--format", "-f", "fmt", required=True,
-    type=click.Choice(["json", "sarif", "markdown"], case_sensitive=False),
+    type=click.Choice(["json", "sarif", "markdown", "html", "junit"], case_sensitive=False),
     help="Output format.",
 )
 @click.option("--output", "-o", default=None, help="Output file path (default: stdout).")
@@ -295,12 +415,112 @@ def report(input_path: str, fmt: str, output: Optional[str]) -> None:
         content = to_json(ctx)
     elif fmt == "sarif":
         content = json.dumps(to_sarif(ctx), indent=2)
+    elif fmt == "html":
+        content = to_html(ctx)
+    elif fmt == "junit":
+        content = to_junit(ctx)
     else:
         content = to_markdown(ctx)
 
     if output:
         Path(output).write_text(content, encoding="utf-8")
         click.echo(f"Report written: {output}")
+    else:
+        click.echo(content)
+
+
+# ------------------------------------------------------------------
+# import command
+# ------------------------------------------------------------------
+
+@cli.command("import")
+@click.option("--input", "-i", "input_path", required=True, help="Path to file to import.")
+@click.option(
+    "--format", "-f", "fmt", required=True,
+    type=click.Choice(["har", "burp", "zap"], case_sensitive=False),
+    help="Input format: har (HAR 1.2), burp (Burp XML), zap (ZAP JSON).",
+)
+@click.option("--output", "-o", default=None, help="Output JSON file for imported targets (default: stdout).")
+def import_cmd(input_path: str, fmt: str, output: Optional[str]) -> None:
+    """Import targets and traffic from external tools (Burp, ZAP, HAR)."""
+    from krumpa.core.exchange import import_har, import_burp_xml, import_zap_json
+
+    p = Path(input_path)
+    if not p.exists():
+        raise click.BadParameter(f"Input file not found: {input_path}")
+
+    raw = p.read_text(encoding="utf-8")
+
+    if fmt == "har":
+        data = json.loads(raw)
+        targets, records = import_har(data)
+    elif fmt == "burp":
+        targets, records = import_burp_xml(raw)
+    elif fmt == "zap":
+        data = json.loads(raw)
+        targets, records = import_zap_json(data)
+    else:
+        raise click.BadParameter(f"Unknown format: {fmt}")
+
+    result = {
+        "targets": [{"url": t.url, "method": t.method} for t in targets],
+        "records": len(records),
+    }
+
+    click.echo(f"Imported {len(targets)} target(s) and {len(records)} request record(s) from {fmt.upper()}")
+
+    content = json.dumps(result, indent=2)
+    if output:
+        Path(output).write_text(content, encoding="utf-8")
+        click.echo(f"Written to: {output}")
+    else:
+        click.echo(content)
+
+
+# ------------------------------------------------------------------
+# export command
+# ------------------------------------------------------------------
+
+@cli.command("export")
+@click.option("--input", "-i", "input_path", required=True, help="Path to GateKrumpa JSON scan results.")
+@click.option(
+    "--format", "-f", "fmt", required=True,
+    type=click.Choice(["har"], case_sensitive=False),
+    help="Export format (currently: har).",
+)
+@click.option("--output", "-o", default=None, help="Output file (default: stdout).")
+def export_cmd(input_path: str, fmt: str, output: Optional[str]) -> None:
+    """Export recorded traffic to external formats (HAR)."""
+    from krumpa.core.exchange import export_har
+    from krumpa.core.recorder import RequestRecord
+
+    p = Path(input_path)
+    if not p.exists():
+        raise click.BadParameter(f"Input file not found: {input_path}")
+
+    data = json.loads(p.read_text(encoding="utf-8"))
+
+    # Reconstruct RequestRecords from JSON
+    records: list[RequestRecord] = []
+    for rd in data.get("records", []):
+        records.append(RequestRecord(
+            method=rd.get("method", "GET"),
+            url=rd.get("url", ""),
+            status_code=rd.get("status_code", 0),
+            request_headers=rd.get("request_headers", {}),
+            response_headers=rd.get("response_headers", {}),
+            duration_ms=rd.get("duration_ms", 0),
+            request_body=rd.get("request_body"),
+            response_body_preview=rd.get("response_body_preview", ""),
+        ))
+
+    har = export_har(records)
+    content = json.dumps(har, indent=2)
+
+    click.echo(f"Exported {len(records)} record(s) to HAR format")
+    if output:
+        Path(output).write_text(content, encoding="utf-8")
+        click.echo(f"Written to: {output}")
     else:
         click.echo(content)
 

@@ -74,4 +74,8 @@ http:
   max_redirects: 10
   verify_ssl: true
   # proxy: http://127.0.0.1:8080  # Burp / ZAP upstream proxy
+  # proxy: socks5://127.0.0.1:1080  # SOCKS5 proxy (requires httpx[socks])
+  # proxy_chain:                     # Multi-hop proxy chain (last entry = immediate upstream)
+  #   - socks5://tor-gateway:9050
+  #   - http://127.0.0.1:8080
   allow_private_networks: false

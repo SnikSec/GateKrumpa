@@ -106,6 +106,7 @@ class ScanContext:
     started_at: Optional[datetime] = None
     finished_at: Optional[datetime] = None
     http_client: Any = None  # Optional[HttpClient] — lifecycle managed by ScanEngine
+    event_bus: Any = None  # Optional[EventBus] — set by engine or user
     _seen_finding_keys: set = field(default_factory=set, repr=False)
 
     def add_finding(self, finding: Finding) -> None:
@@ -119,6 +120,8 @@ class ScanContext:
             return
         self._seen_finding_keys.add(key)
         self.findings.append(finding)
+        if self.event_bus is not None:
+            self.event_bus.emit("finding_added", {"finding": finding})
 
     @staticmethod
     def finding_key(f: Finding) -> str:
@@ -142,6 +145,8 @@ class ScanContext:
                     existing.body = target.body
                 return
         self.targets.append(target)
+        if self.event_bus is not None:
+            self.event_bus.emit("target_added", {"target": target})
 
     def summary(self) -> Dict[str, Any]:
         by_sev = {}

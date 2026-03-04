@@ -14,6 +14,7 @@ from krumpa.waaaghlogic.mass_assignment import MassAssignmentTester
 from krumpa.waaaghlogic.file_upload import FileUploadTester
 from krumpa.waaaghlogic.privilege_escalation import PrivilegeEscalationTester
 from krumpa.waaaghlogic.pagination import PaginationTester
+from krumpa.waaaghlogic.rate_limit_tester import RateLimitTester, RateLimitTarget
 from krumpa.waaaghlogic.module import WaaaghLogicModule
 
 __all__ = [
@@ -25,4 +26,6 @@ __all__ = [
     "FileUploadTester",
     "PrivilegeEscalationTester",
     "PaginationTester",
+    "RateLimitTester",
+    "RateLimitTarget",
 ]
