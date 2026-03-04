@@ -19,6 +19,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Type
 
 from krumpa.core import BaseModule, Finding, ModuleStatus, ScanContext
+from krumpa.core.events import EventBus, ScanEvent
 
 logger = logging.getLogger("krumpa.engine")
 
@@ -36,6 +37,7 @@ class ScanEngine:
         self._modules: Dict[str, BaseModule] = {}
         self._execution_order: List[str] = []
         self._http_config: Dict[str, Any] = http_config or {}
+        self._event_bus: Optional[EventBus] = None
 
     # -- registration -------------------------------------------------------
 
@@ -51,6 +53,11 @@ class ScanEngine:
     def register_class(self, cls: Type[BaseModule], **kwargs) -> None:
         """Instantiate and register a module class."""
         self.register(cls(**kwargs))
+
+    def set_event_bus(self, bus: EventBus) -> None:
+        """Attach an event bus for lifecycle notifications."""
+        self._event_bus = bus
+        self.ctx.event_bus = bus
 
     # -- execution ----------------------------------------------------------
 
@@ -71,6 +78,11 @@ class ScanEngine:
             self.ctx.scan_id,
             len(self._modules),
         )
+        if self._event_bus:
+            await self._event_bus.emit_async(ScanEvent.SCAN_STARTED, {
+                "scan_id": self.ctx.scan_id,
+                "target_count": len(self.ctx.targets),
+            })
 
         try:
             levels = self._build_execution_levels()
@@ -87,6 +99,15 @@ class ScanEngine:
             self.ctx.clear_sensitive()
             await client.close()
             self.ctx.http_client = None
+            if self._event_bus:
+                duration = None
+                if self.ctx.started_at and self.ctx.finished_at:
+                    duration = (self.ctx.finished_at - self.ctx.started_at).total_seconds()
+                await self._event_bus.emit_async(ScanEvent.SCAN_FINISHED, {
+                    "scan_id": self.ctx.scan_id,
+                    "finding_count": len(self.ctx.findings),
+                    "duration_s": duration,
+                })
 
         logger.info(
             "Scan %s finished — %d finding(s)",
@@ -113,18 +134,35 @@ class ScanEngine:
                         dep_mod.status.value,
                     )
                     mod.status = ModuleStatus.CANCELLED
+                    if self._event_bus:
+                        await self._event_bus.emit_async(ScanEvent.MODULE_SKIPPED, {
+                            "module": mod.name,
+                            "reason": f"dependency {dep_name} {dep_mod.status.value}",
+                        })
                     return []
 
         logger.info("Running module: %s", mod.name)
         mod.status = ModuleStatus.RUNNING
+        if self._event_bus:
+            await self._event_bus.emit_async(ScanEvent.MODULE_STARTED, {"module": mod.name})
         try:
             await mod.setup(self.ctx)
             findings = await mod.run(self.ctx)
             mod.status = ModuleStatus.COMPLETED
+            if self._event_bus:
+                await self._event_bus.emit_async(ScanEvent.MODULE_COMPLETED, {
+                    "module": mod.name,
+                    "finding_count": len(findings),
+                })
         except Exception as exc:
             mod.status = ModuleStatus.FAILED
             logger.error("Module %s failed: %s", mod.name, type(exc).__name__)
             logger.debug("Module %s traceback:", mod.name, exc_info=True)
+            if self._event_bus:
+                await self._event_bus.emit_async(ScanEvent.MODULE_FAILED, {
+                    "module": mod.name,
+                    "error": str(exc),
+                })
             findings = []
         finally:
             await mod.teardown(self.ctx)
