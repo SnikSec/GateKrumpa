@@ -15,6 +15,7 @@ from krumpa.sneakygits.ssl_analyzer import SslAnalyzer
 from krumpa.sneakygits.waf_detector import WafDetector
 from krumpa.sneakygits.backup_scanner import BackupScanner
 from krumpa.sneakygits.fingerprint_db import FingerprintDb, TechSignature
+from krumpa.sneakygits.platform_exposure import PlatformExposureAnalyzer
 from krumpa.sneakygits.module import SneakyGitsModule
 
 __all__ = [
@@ -28,4 +29,5 @@ __all__ = [
     "BackupScanner",
     "FingerprintDb",
     "TechSignature",
+    "PlatformExposureAnalyzer",
 ]

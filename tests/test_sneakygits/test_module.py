@@ -62,6 +62,10 @@ def _make_module(
     mod._ssl_analyzer = _NoopAsync()
     mod._waf_detector = _NoopAsync()
     mod._backup_scanner = _NoopAsync()
+    mod._method_discovery = _NoopAsync()
+    mod._info_leakage = _NoopAsync()
+    mod._dns_enum = _NoopAsync()
+    mod._platform_exposure = _NoopAsync()
     return mod
 
 
@@ -152,3 +156,22 @@ class TestSneakyGitsModule:
         mod = SneakyGitsModule()
         assert mod.name == "SneakyGits"
         assert "Recon" in mod.description or "crawl" in mod.description
+
+    async def test_platform_findings_are_included(self):
+        mod = _make_module(discovered={"https://example.com": []})
+
+        class _PlatformStub:
+            async def analyze(self, target):
+                return [Finding(
+                    title="Kubernetes API server management surface exposed",
+                    description="Publicly reachable Kubernetes endpoints detected",
+                    severity=Severity.CRITICAL,
+                    target=target,
+                    tags=["platform-exposure", "kubernetes"],
+                )]
+
+        mod._platform_exposure = _PlatformStub()
+        ctx = ScanContext(targets=[Target(url="https://example.com")])
+        findings = await mod.run(ctx)
+
+        assert any("platform-exposure" in finding.tags for finding in findings)

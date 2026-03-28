@@ -9,6 +9,7 @@ A modular dynamic attack simulation platform for external APIs and game services
 ## Table of Contents
 
 - [Quick Start](#quick-start)
+- [Implementation Backlog](#implementation-backlog)
 - [Architecture](#architecture)
 - [CLI Commands](#cli-commands)
 - [Core Package](#core-package)
@@ -33,6 +34,8 @@ A modular dynamic attack simulation platform for external APIs and game services
 
 ```bash
 pip install -e ".[dev,yaml,mcp]"
+# or
+python3.11 -m pip install -r requirements.txt
 
 # Run a scan
 gatekrumpa scan -t http://target.example.com -f json -o ./output/
@@ -43,6 +46,12 @@ gatekrumpa modules list
 # Start MCP server for AI agent integration
 gatekrumpa mcp-serve --config configs/default.yaml
 ```
+
+---
+
+## Implementation Backlog
+
+The working implementation backlog for upcoming capability expansion lives in [IMPLEMENTATION_BACKLOG.md](IMPLEMENTATION_BACKLOG.md).
 
 ---
 
@@ -154,12 +163,13 @@ Each module follows a consistent pattern: domain-specific helper classes plus a 
 
 > Target enumeration, crawling, and fingerprinting.
 
-**Capabilities:** Crawling, content/directory discovery, JS endpoint extraction, JS secret detection, source map detection, SSL/TLS analysis, backup/leftover file detection, WAF/CDN detection, HTTP method discovery, information leakage scanning, authenticated crawl, fingerprint DB (200+ signatures), DNS subdomain enumeration (brute-force/CT logs).
+**Capabilities:** Crawling, content/directory discovery, JS endpoint extraction, JS secret detection, source map detection, SSL/TLS analysis, backup/leftover file detection, WAF/CDN detection, HTTP method discovery, information leakage scanning, authenticated crawl, fingerprint DB (200+ signatures), DNS subdomain enumeration (brute-force/CT logs), platform exposure analysis for Kubernetes, kubelet, etcd, registries, Harbor, Quay, Artifactory, Argo CD, Rancher, and public admin surfaces.
 
 | File | Export | Type | Description |
 |------|--------|------|-------------|
 | `crawler.py` | `Crawler` | Class | Async web crawler; discovers endpoints via HTML links, robots.txt, sitemaps, JS extraction |
 | `fingerprint.py` | `Fingerprinter` | Class | Identifies technologies against a 200+ signature database |
+| `platform_exposure.py` | `PlatformExposureAnalyzer` | Class | Safely detects exposed Kubernetes, container, and operational admin surfaces |
 | `header_audit.py` | `HeaderAuditor` | Class | Security header analysis |
 | `cors_checker.py` | `CorsChecker` | Class | CORS misconfiguration detection |
 | `module.py` | `SneakyGitsModule` | BaseModule | Orchestrates recon pipeline |

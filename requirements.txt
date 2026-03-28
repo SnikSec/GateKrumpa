@@ -1,0 +1,11 @@
+# GateKrumpa environment bootstrap
+#
+# Usage:
+#   python3.11 -m pip install -r requirements.txt
+# or any Python >= 3.11 interpreter available on the system.
+#
+# This installs the project in editable mode plus the existing optional
+# dependency groups used for development, testing, YAML config support,
+# and MCP integration.
+
+-e .[dev,yaml,mcp]

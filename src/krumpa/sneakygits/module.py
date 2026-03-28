@@ -21,6 +21,7 @@ from krumpa.sneakygits.fingerprint_db import FingerprintDb
 from krumpa.sneakygits.method_discovery import MethodDiscovery
 from krumpa.sneakygits.info_leakage import InfoLeakageScanner
 from krumpa.sneakygits.dns_enumeration import DnsEnumerator
+from krumpa.sneakygits.platform_exposure import PlatformExposureAnalyzer
 
 logger = logging.getLogger("krumpa.sneakygits")
 
@@ -56,6 +57,7 @@ class SneakyGitsModule(BaseModule):
         self._method_discovery = MethodDiscovery()
         self._info_leakage = InfoLeakageScanner()
         self._dns_enum = DnsEnumerator()
+        self._platform_exposure = PlatformExposureAnalyzer()
 
     async def setup(self, ctx: ScanContext) -> None:
         """Wire shared HTTP client into sub-components."""
@@ -72,6 +74,7 @@ class SneakyGitsModule(BaseModule):
             self._method_discovery.set_client(client)
             self._info_leakage.set_client(client)
             self._dns_enum.set_client(client)
+            self._platform_exposure.set_client(client)
 
         # Inject auth tokens into the crawler for authenticated crawling
         if ctx.auth_tokens:
@@ -106,6 +109,7 @@ class SneakyGitsModule(BaseModule):
             # Fingerprint each discovered endpoint
             techs = await self._fingerprinter.identify(target.url)
             if techs:
+                target.metadata["fingerprint_techs"] = list(techs)
                 findings.append(Finding(
                     title=f"Technology detected on {target.host}",
                     description=f"Technologies found: {', '.join(techs)}",
@@ -154,6 +158,10 @@ class SneakyGitsModule(BaseModule):
             dns_findings = await self._dns_enum.enumerate(target)
             findings.extend(dns_findings)
 
+            # Platform exposure checks (Kubernetes, containers, admin surfaces)
+            platform_findings = await self._platform_exposure.analyze(target)
+            findings.extend(platform_findings)
+
             # FingerprintDb-based technology detection
             db_detections = self._fingerprint_db.detect(
                 headers=dict(target.headers) if target.headers else None,
@@ -162,6 +170,7 @@ class SneakyGitsModule(BaseModule):
             )
             if db_detections:
                 tech_names = [d["name"] for d in db_detections]
+                target.metadata["fingerprint_db_techs"] = list(tech_names)
                 findings.append(Finding(
                     title=f"Technologies detected (fingerprint DB) on {target.host}",
                     description=f"Detected: {', '.join(tech_names)}",
@@ -171,9 +180,9 @@ class SneakyGitsModule(BaseModule):
                 ))
 
             logger.info(
-                "Discovered %d endpoints, %d technologies, %d header, %d CORS, %d content, %d JS, %d SSL findings on %s",
+                "Discovered %d endpoints, %d technologies, %d header, %d CORS, %d content, %d JS, %d SSL, %d platform findings on %s",
                 len(discovered), len(techs), len(header_findings), len(cors_findings),
-                len(disc_findings), len(js_findings), len(ssl_findings),
+                len(disc_findings), len(js_findings), len(ssl_findings), len(platform_findings),
                 target.url,
             )
 
