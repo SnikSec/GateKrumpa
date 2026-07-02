@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import json
-import pytest
 
 from krumpa.core import Finding, ScanContext, Severity, Target
 from krumpa.core.attack_chain import AttackChain

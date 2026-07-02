@@ -17,7 +17,6 @@ typically ``POST /approve``, ``POST /hitl``, ``POST /confirm``,
 
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 import time
@@ -115,8 +114,6 @@ class ApprovalFatigueTester(HttpClientMixin):
         self, client: HttpClient, base: str
     ) -> Optional[str]:
         """Return the first live approval endpoint or None."""
-        # Check target metadata first
-        hitl_path = None
         for path in _APPROVAL_PATHS:
             url = f"{base}{path}"
             try:

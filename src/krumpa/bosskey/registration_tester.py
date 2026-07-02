@@ -281,9 +281,9 @@ class RegistrationTester(HttpClientMixin):
             return Finding(
                 title=f"No rate-limiting on registration at {target.url}",
                 description=(
-                    f"Sent 10 rapid registration requests and all succeeded. "
-                    f"No rate-limiting or CAPTCHA detected, enabling automated "
-                    f"account creation for spam or abuse."
+                    "Sent 10 rapid registration requests and all succeeded. "
+                    "No rate-limiting or CAPTCHA detected, enabling automated "
+                    "account creation for spam or abuse."
                 ),
                 severity=Severity.MEDIUM,
                 target=target,

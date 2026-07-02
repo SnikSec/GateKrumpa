@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 
 from krumpa.core import Severity, Target
 from krumpa.reposcout.repo_crawler import RepoData

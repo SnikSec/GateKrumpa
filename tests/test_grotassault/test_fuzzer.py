@@ -4,8 +4,8 @@ import pytest
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from krumpa.core import Finding, Severity, Target
-from krumpa.grotassault.fuzzer import Fuzzer, FuzzTarget, _REFLECTION_MIN_LENGTH
+from krumpa.core import Severity, Target
+from krumpa.grotassault.fuzzer import Fuzzer, FuzzTarget
 from krumpa.grotassault.mutator import Mutator, MutationStrategy
 
 

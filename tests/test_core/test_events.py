@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 
 import pytest
 
@@ -131,7 +130,10 @@ class TestRegistration:
     def test_off_removes_listener(self):
         bus = EventBus()
         received = []
-        fn = lambda d: received.append(1)
+
+        def fn(d):
+            received.append(1)
+
         bus.on(ScanEvent.SCAN_STARTED, fn)
         bus.off(ScanEvent.SCAN_STARTED, fn)
         bus.emit(ScanEvent.SCAN_STARTED)

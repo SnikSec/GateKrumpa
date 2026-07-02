@@ -18,7 +18,7 @@ from __future__ import annotations
 import logging
 from typing import List
 
-from krumpa.core import BaseModule, Finding, ScanContext, Target, TargetType
+from krumpa.core import BaseModule, Finding, ScanContext, Target
 
 logger = logging.getLogger("krumpa.aifuzz")
 

@@ -15,7 +15,6 @@ Export functions convert recorded traffic into the target format.
 from __future__ import annotations
 
 import base64
-import json
 import logging
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone

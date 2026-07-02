@@ -310,7 +310,7 @@ class TestEngineRunAll:
         engine = ScanEngine()
         engine.register(_FailModule("A"))
         engine.register(_StubModule("B", deps=["A"]))
-        ctx = await engine.run_all()
+        _ctx = await engine.run_all()
         assert engine.modules["A"].status == ModuleStatus.FAILED
         assert engine.modules["B"].status == ModuleStatus.CANCELLED
 
@@ -320,7 +320,7 @@ class TestEngineRunAll:
         engine.register(_FailModule("A"))
         engine.register(_StubModule("B", deps=["A"]))
         engine.register(_StubModule("C", deps=["B"]))
-        ctx = await engine.run_all()
+        _ctx = await engine.run_all()
         assert engine.modules["A"].status == ModuleStatus.FAILED
         assert engine.modules["B"].status == ModuleStatus.CANCELLED
         assert engine.modules["C"].status == ModuleStatus.CANCELLED

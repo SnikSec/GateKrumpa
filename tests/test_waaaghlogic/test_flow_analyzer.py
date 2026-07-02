@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 import pytest
 
-from krumpa.core import Severity, Target
+from krumpa.core import Target
 from krumpa.waaaghlogic.flow_analyzer import FlowAnalyzer, WorkflowStep
 
 

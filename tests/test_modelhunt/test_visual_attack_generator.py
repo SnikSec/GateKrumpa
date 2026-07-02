@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 
 from krumpa.core import ScanContext, Target
 from krumpa.modelhunt.visual_attack_generator import VisualAttackGenerator, VisualPayload

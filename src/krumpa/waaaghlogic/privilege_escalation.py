@@ -164,7 +164,7 @@ class PrivilegeEscalationTester(HttpClientMixin):
 
                 if resp.status_code < 400:
                     findings.append(Finding(
-                        title=f"Vertical privilege escalation: admin endpoint accessible",
+                        title="Vertical privilege escalation: admin endpoint accessible",
                         description=(
                             f"Admin endpoint {endpoint} returned HTTP {resp.status_code} "
                             f"with a regular user token. This indicates missing or "

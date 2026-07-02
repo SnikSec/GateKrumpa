@@ -202,7 +202,7 @@ class TestInjectLocations:
             expected_indicator="<krumpa-xss-test>",
             inject_location="body", inject_field="name",
         )
-        result = await confirmer.confirm(finding, [pp], Target(url="https://target.com"))
+        _result = await confirmer.confirm(finding, [pp], Target(url="https://target.com"))
         req = client.requests[0]
         assert req["json_body"] == {"name": "<krumpa-xss-test>"}
 

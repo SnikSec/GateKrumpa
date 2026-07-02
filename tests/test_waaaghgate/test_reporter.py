@@ -1,7 +1,6 @@
 """Tests for krumpa.waaaghgate.reporter — pipeline report generator."""
 
 import json
-import pytest
 from krumpa.core import Finding, ScanContext, Severity, Target
 from krumpa.waaaghgate.gate import GatePolicy, GateResult
 from krumpa.waaaghgate.reporter import PipelineReporter, ReportFormat

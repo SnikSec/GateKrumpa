@@ -20,9 +20,7 @@ from __future__ import annotations
 
 import base64
 import logging
-import re
-import unicodedata
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Tuple
 
 from krumpa.core import Finding, ScanContext, Severity, Target
 from krumpa.core.http_client import HttpClient, HttpClientMixin

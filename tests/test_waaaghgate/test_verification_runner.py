@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import json
 import pytest
 
-from krumpa.core import Finding, ScanContext, Severity, Target
+from krumpa.core import Finding, ScanContext, Severity
 from krumpa.waaaghgate.verification_runner import (
     VerificationPath, VerificationResult, VerificationRunner,
 )

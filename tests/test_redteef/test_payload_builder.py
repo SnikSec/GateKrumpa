@@ -1,6 +1,5 @@
 """Tests for krumpa.redteef.payload_builder — PoC payload builder."""
 
-import pytest
 from krumpa.redteef.payload_builder import PayloadBuilder, ProofPayload
 
 

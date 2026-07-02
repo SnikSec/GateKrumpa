@@ -1,6 +1,5 @@
 """Tests for krumpa.openkrump.validator — schema validator."""
 
-import pytest
 from krumpa.core import Severity, Target
 from krumpa.openkrump.parser import ParsedEndpoint
 from krumpa.openkrump.validator import SchemaValidator, ValidationIssue

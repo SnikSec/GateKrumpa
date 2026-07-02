@@ -186,8 +186,8 @@ class SsrfConfirmer(HttpClientMixin):
                             f"'{field_name}' returned cloud metadata content. "
                             + ("Cloud credentials were exposed! " if is_credential else "")
                             + "This allows an attacker to access cloud instance "
-                            f"metadata, potentially leading to credential theft "
-                            f"and full cloud account compromise."
+                            "metadata, potentially leading to credential theft "
+                            "and full cloud account compromise."
                         ),
                         severity=severity,
                         target=target,

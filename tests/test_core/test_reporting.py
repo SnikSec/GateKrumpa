@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 
-import pytest
 
 from krumpa.core import Finding, ScanContext, Severity, Target
 from krumpa.core.reporting import to_json, to_sarif, to_markdown, _redact

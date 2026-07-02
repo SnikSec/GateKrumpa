@@ -1,7 +1,6 @@
 """Tests for krumpa.openkrump.parser — OpenAPI spec parser."""
 
-import pytest
-from krumpa.openkrump.parser import SpecParser, ParsedEndpoint
+from krumpa.openkrump.parser import SpecParser
 
 
 # ------------------------------------------------------------------

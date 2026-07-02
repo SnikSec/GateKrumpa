@@ -17,13 +17,12 @@ Usage::
 
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
-from krumpa.core import Finding, ScanContext, Severity
+from krumpa.core import Finding, ScanContext
 
 logger = logging.getLogger("krumpa.waaaghgate.verification_runner")
 

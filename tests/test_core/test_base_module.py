@@ -6,7 +6,7 @@ from typing import List
 
 import pytest
 
-from krumpa.core import BaseModule, Finding, ModuleStatus, ScanContext, Severity
+from krumpa.core import BaseModule, Finding, ModuleStatus, ScanContext
 
 
 # ------------------------------------------------------------------

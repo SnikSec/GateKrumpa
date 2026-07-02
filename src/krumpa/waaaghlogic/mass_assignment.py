@@ -85,7 +85,7 @@ class MassAssignmentTester(HttpClientMixin):
         if critical:
             names = ", ".join(r.field_name for r in critical)
             findings.append(Finding(
-                title=f"Mass assignment — privilege escalation fields accepted",
+                title="Mass assignment — privilege escalation fields accepted",
                 description=(
                     f"Privilege-related fields [{names}] were accepted by {target.url}. "
                     f"This may allow attackers to elevate privileges."
@@ -104,7 +104,7 @@ class MassAssignmentTester(HttpClientMixin):
         if high:
             names = ", ".join(r.field_name for r in high)
             findings.append(Finding(
-                title=f"Mass assignment — sensitive fields accepted",
+                title="Mass assignment — sensitive fields accepted",
                 description=f"Fields [{names}] were accepted by {target.url}.",
                 severity=Severity.HIGH,
                 target=target,
@@ -120,7 +120,7 @@ class MassAssignmentTester(HttpClientMixin):
         if other:
             names = ", ".join(r.field_name for r in other)
             findings.append(Finding(
-                title=f"Mass assignment — extra fields accepted",
+                title="Mass assignment — extra fields accepted",
                 description=f"Unexpected fields [{names}] were accepted by {target.url}.",
                 severity=Severity.MEDIUM,
                 target=target,

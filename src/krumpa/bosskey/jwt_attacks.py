@@ -129,7 +129,7 @@ class JwtAdvancedTester(HttpClientMixin):
         if "jku" in header or "x5u" in header:
             findings.append(Finding(
                 title="JWT contains URL-based key reference",
-                description=f"Header contains jku/x5u pointing to external key — SSRF risk.",
+                description="Header contains jku/x5u pointing to external key — SSRF risk.",
                 severity=Severity.MEDIUM,
                 target=Target(url="jwt://token"),
                 cwe=918,

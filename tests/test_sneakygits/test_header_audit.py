@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from krumpa.core import Finding, Severity, Target
+from krumpa.core import Severity, Target
 from krumpa.sneakygits.header_audit import (
     HeaderAuditor,
     SECURITY_HEADERS,

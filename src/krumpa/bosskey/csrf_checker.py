@@ -241,7 +241,7 @@ class CsrfChecker(HttpClientMixin):
                     )
                     if 200 <= resp_cross_origin.status_code < 300:
                         findings.append(Finding(
-                            title=f"State-changing endpoint accepts cross-origin requests",
+                            title="State-changing endpoint accepts cross-origin requests",
                             description=(
                                 f"The endpoint {target.url} ({target.method}) accepted "
                                 "a request with Origin: https://evil-attacker.com and "

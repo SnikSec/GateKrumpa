@@ -23,7 +23,6 @@ from __future__ import annotations
 import json
 import logging
 from typing import Any, Dict, List, Optional, Tuple
-from urllib.parse import urljoin
 
 from krumpa.core import Finding, ScanContext, Severity, Target
 from krumpa.core.http_client import HttpClient, HttpClientMixin

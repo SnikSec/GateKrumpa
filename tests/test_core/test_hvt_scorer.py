@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 
 from krumpa.core import Finding, ScanContext, Severity, Target
 from krumpa.core.hvt_scorer import HVTScorer, TargetScore

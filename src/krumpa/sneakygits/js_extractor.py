@@ -165,8 +165,8 @@ class JsExtractor(HttpClientMixin):
             findings.append(Finding(
                 title=f"Source maps detected ({len(result.source_maps)})",
                 description=(
-                    f"JavaScript source maps found — these may expose original "
-                    f"source code, comments, and internal variable names."
+                    "JavaScript source maps found — these may expose original "
+                    "source code, comments, and internal variable names."
                 ),
                 severity=Severity.MEDIUM,
                 target=target,
