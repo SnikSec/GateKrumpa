@@ -22,6 +22,7 @@ from krumpa.sneakygits.method_discovery import MethodDiscovery
 from krumpa.sneakygits.info_leakage import InfoLeakageScanner
 from krumpa.sneakygits.dns_enumeration import DnsEnumerator
 from krumpa.sneakygits.platform_exposure import PlatformExposureAnalyzer
+from krumpa.sneakygits.passive_recon import PassiveReconAnalyzer
 
 logger = logging.getLogger("krumpa.sneakygits")
 
@@ -58,6 +59,7 @@ class SneakyGitsModule(BaseModule):
         self._info_leakage = InfoLeakageScanner()
         self._dns_enum = DnsEnumerator()
         self._platform_exposure = PlatformExposureAnalyzer()
+        self._passive_recon = PassiveReconAnalyzer()
 
     async def setup(self, ctx: ScanContext) -> None:
         """Wire shared HTTP client into sub-components."""
@@ -75,6 +77,7 @@ class SneakyGitsModule(BaseModule):
             self._info_leakage.set_client(client)
             self._dns_enum.set_client(client)
             self._platform_exposure.set_client(client)
+            self._passive_recon.set_client(client)
 
         # Inject auth tokens into the crawler for authenticated crawling
         if ctx.auth_tokens:
@@ -106,13 +109,15 @@ class SneakyGitsModule(BaseModule):
                 target.metadata.setdefault("set_cookie_headers", []).extend(all_cookies)
                 ctx.metadata.setdefault("cookies", []).extend(all_cookies)
 
-            # Fingerprint each discovered endpoint
-            techs = await self._fingerprinter.identify(target.url)
-            if techs:
-                target.metadata["fingerprint_techs"] = list(techs)
+            # Fingerprint each discovered endpoint — returns FingerprintResult
+            fp_result = await self._fingerprinter.identify(target.url)
+            if fp_result.technologies:
+                target.metadata["fingerprint_techs"] = fp_result.technologies
+                # Store rich result in context so aifuzz/cloudstrike can consume it
+                ctx.metadata.setdefault("fingerprints", {})[target.url] = fp_result
                 findings.append(Finding(
                     title=f"Technology detected on {target.host}",
-                    description=f"Technologies found: {', '.join(techs)}",
+                    description=f"Technologies found: {', '.join(fp_result.technologies)}",
                     severity=Severity.INFO,
                     target=target,
                     tags=["recon", "fingerprint"],
@@ -158,9 +163,22 @@ class SneakyGitsModule(BaseModule):
             dns_findings = await self._dns_enum.enumerate(target)
             findings.extend(dns_findings)
 
-            # Platform exposure checks (Kubernetes, containers, admin surfaces)
+            # Platform exposure checks (Kubernetes, containers, admin surfaces, AI infra)
             platform_findings = await self._platform_exposure.analyze(target)
             findings.extend(platform_findings)
+
+            # Passive recon: archived URL harvesting, parameter mining, takeover detection
+            passive_result = await self._passive_recon.analyze(target)
+            findings.extend(passive_result.findings)
+            for archived_url in passive_result.archived_urls:
+                ctx.add_target(Target(
+                    url=archived_url,
+                    metadata={"discovered_by": "passive_recon"},
+                ))
+            if passive_result.discovered_params:
+                target.metadata.setdefault("js_discovered_params", []).extend(
+                    sorted(passive_result.discovered_params)
+                )
 
             # FingerprintDb-based technology detection
             db_detections = self._fingerprint_db.detect(
@@ -180,9 +198,11 @@ class SneakyGitsModule(BaseModule):
                 ))
 
             logger.info(
-                "Discovered %d endpoints, %d technologies, %d header, %d CORS, %d content, %d JS, %d SSL, %d platform findings on %s",
-                len(discovered), len(techs), len(header_findings), len(cors_findings),
-                len(disc_findings), len(js_findings), len(ssl_findings), len(platform_findings),
+                "Discovered %d endpoints, %d technologies, %d header, %d CORS, "
+                "%d content, %d JS, %d SSL, %d platform, %d passive findings on %s",
+                len(discovered), len(fp_result.technologies), len(header_findings),
+                len(cors_findings), len(disc_findings), len(js_findings),
+                len(ssl_findings), len(platform_findings), len(passive_result.findings),
                 target.url,
             )
 

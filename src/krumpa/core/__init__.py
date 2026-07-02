@@ -41,13 +41,59 @@ class ModuleStatus(enum.Enum):
     CANCELLED = "cancelled"
 
 
+class TargetType(enum.Enum):
+    """Describes the kind of resource a :class:`Target` points at.
+
+    The type is inferred automatically from the URL scheme:
+
+    =========== ===========================
+    Scheme      TargetType
+    =========== ===========================
+    ``https?``  ``WEB`` (default)
+    ``aws``     ``AWS``
+    ``github``  ``GITHUB``
+    ``gitlab``  ``GITLAB``
+    =========== ===========================
+
+    AI endpoints remain ``WEB`` targets — they are identified by fingerprint
+    signals or explicit metadata rather than a separate scheme.
+    """
+    WEB = "web"
+    AWS = "aws"
+    GITHUB = "github"
+    GITLAB = "gitlab"
+
+
 # ---------------------------------------------------------------------------
 # Data classes
 # ---------------------------------------------------------------------------
 
 @dataclass
 class Target:
-    """A single scan target (URL, host, API endpoint, etc.)."""
+    """A single scan target (URL, host, API endpoint, cloud env, or repository).
+
+    **Standard URL targets** use ``https://`` or ``http://`` schemes.
+
+    **Cloud targets** use pseudo-URL schemes so that the existing pipeline
+    can route them without a new class hierarchy:
+
+    - ``aws://us-east-1``           → :attr:`TargetType.AWS`
+    - ``github://org/repo``         → :attr:`TargetType.GITHUB`
+    - ``gitlab://host/group/repo``  → :attr:`TargetType.GITLAB`
+
+    **Metadata key conventions** for non-web targets:
+
+    =================== ====================================================
+    Key                 Description
+    =================== ====================================================
+    ``aws_profile``     boto3 named profile (falls back to env / default)
+    ``aws_region``      AWS region string, e.g. ``"us-east-1"``
+    ``repo_token``      Personal access token for GitHub / GitLab
+    ``ai_api_key``      API key for the LLM provider
+    ``ai_model``        Model identifier, e.g. ``"gpt-4o"``
+    ``ai_provider``     Provider hint: ``"openai"``, ``"anthropic"``, ``"bedrock"``
+    =================== ====================================================
+    """
     url: str
     method: str = "GET"
     headers: Dict[str, str] = field(default_factory=dict)
@@ -58,6 +104,16 @@ class Target:
     def host(self) -> str:
         from urllib.parse import urlparse
         return urlparse(self.url).hostname or self.url
+
+    @property
+    def target_type(self) -> TargetType:
+        """Infer :class:`TargetType` from the URL scheme."""
+        scheme = self.url.split("://")[0].lower() if "://" in self.url else "https"
+        return {
+            "aws": TargetType.AWS,
+            "github": TargetType.GITHUB,
+            "gitlab": TargetType.GITLAB,
+        }.get(scheme, TargetType.WEB)
 
 
 @dataclass

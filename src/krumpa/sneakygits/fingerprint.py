@@ -6,6 +6,11 @@ Identifies server-side and client-side technologies by inspecting:
   - HTML meta tags and generator hints
   - Known JavaScript library patterns
   - Cookie naming conventions
+
+``identify()`` now returns a :class:`FingerprintResult` that carries the full
+response context (raw headers, body excerpt, cookies, redirect chain) so that
+downstream modules (aifuzz, cloudstrike, platform_exposure) can consume rich
+fingerprint signals without re-fetching.
 """
 
 from __future__ import annotations
@@ -23,6 +28,38 @@ logger = logging.getLogger("krumpa.sneakygits.fingerprint")
 
 
 # ------------------------------------------------------------------
+# Result dataclass
+# ------------------------------------------------------------------
+
+@dataclass
+class FingerprintResult:
+    """Rich fingerprint output for a single URL.
+
+    Attributes
+    ----------
+    url:
+        The probed URL.
+    technologies:
+        Sorted list of detected technology names.
+    raw_headers:
+        Lower-cased response headers dict from the final response.
+    body_excerpt:
+        First 512 characters of the response body (safe to log/store).
+    cookies:
+        List of raw ``Set-Cookie`` header values seen on the response.
+    redirect_chain:
+        List of intermediate URLs followed before reaching the final response.
+        Empty when the request had no redirects.
+    """
+    url: str
+    technologies: List[str] = field(default_factory=list)
+    raw_headers: Dict[str, str] = field(default_factory=dict)
+    body_excerpt: str = ""
+    cookies: List[str] = field(default_factory=list)
+    redirect_chain: List[str] = field(default_factory=list)
+
+
+# ------------------------------------------------------------------
 # Signature definitions
 # ------------------------------------------------------------------
 
@@ -30,7 +67,7 @@ logger = logging.getLogger("krumpa.sneakygits.fingerprint")
 class _Signature(HttpClientMixin):
     """A single fingerprint rule."""
     name: str
-    category: str  # e.g. "server", "framework", "cms", "js-lib", "cdn"
+    category: str  # e.g. "server", "framework", "cms", "js-lib", "cdn", "ai-infra"
     # At least one of the following must match for identification
     header_patterns: Dict[str, re.Pattern] = field(default_factory=dict)   # header-name → regex
     body_patterns: List[re.Pattern] = field(default_factory=list)
@@ -151,6 +188,136 @@ _SIGNATURES: List[_Signature] = [
         category="security-header",
         header_patterns={"content-security-policy": _h(r".")},
     ),
+
+    # ---- Cloud load-balancers / edge ----
+    _Signature(
+        name="AWS ALB",
+        category="cloud-lb",
+        header_patterns={
+            "x-amzn-trace-id": _h(r"Root="),
+            "x-amzn-requestid": _h(r"."),
+        },
+    ),
+    _Signature(
+        name="AWS CloudFront",
+        category="cdn",
+        header_patterns={
+            "x-amz-cf-id": _h(r"."),
+            "via": _h(r"cloudfront"),
+        },
+    ),
+    _Signature(
+        name="GCP Load Balancer",
+        category="cloud-lb",
+        header_patterns={"via": _h(r"1\.1 google")},
+    ),
+    _Signature(
+        name="Azure Front Door",
+        category="cloud-lb",
+        header_patterns={"x-azure-ref": _h(r".")},
+    ),
+    _Signature(
+        name="Azure Application Gateway",
+        category="cloud-lb",
+        header_patterns={"server": _h(r"Microsoft-Azure-Application-Gateway")},
+    ),
+    _Signature(
+        name="AKS Ingress",
+        category="cloud-lb",
+        header_patterns={
+            "x-ms-routing-name": _h(r"."),
+        },
+    ),
+
+    # ---- AI / ML inference infrastructure ----
+    _Signature(
+        name="Gradio",
+        category="ai-infra",
+        header_patterns={"x-gradio-version": _h(r".")},
+        body_patterns=[_h(r"gradio|gr\.Blocks|gr\.Interface")],
+    ),
+    _Signature(
+        name="Streamlit",
+        category="ai-infra",
+        body_patterns=[_h(r"streamlit|st\.write|stApp")],
+        header_patterns={"x-streamlit-version": _h(r".")},
+    ),
+    _Signature(
+        name="FastAPI",
+        category="framework",
+        body_patterns=[_h(r'"/openapi\.json"|\\"openapi\\":|redoc.*js')],
+    ),
+    _Signature(
+        name="Triton Inference Server",
+        category="ai-infra",
+        body_patterns=[_h(r'"triton".*"ready"|tritonserver|/v2/health/ready')],
+    ),
+    _Signature(
+        name="NVIDIA NIM",
+        category="ai-infra",
+        header_patterns={"server": _h(r"nim|nvidia")},
+        body_patterns=[_h(r'nvidia/nim|nvcr\.io')],
+    ),
+    _Signature(
+        name="Ollama",
+        category="ai-infra",
+        body_patterns=[_h(r'"models":\[.*"name":|ollama/api|Ollama is running')],
+    ),
+    _Signature(
+        name="LangServe",
+        category="ai-infra",
+        body_patterns=[_h(r"/invoke|/stream|/batch.*langchain|langserve")],
+    ),
+    _Signature(
+        name="OpenAI-compatible API",
+        category="ai-infra",
+        body_patterns=[_h(r'"object":"chat\.completion"|"choices":\[.*"message"')],
+    ),
+    _Signature(
+        name="Hugging Face Spaces",
+        category="ai-infra",
+        header_patterns={"x-hf-worker": _h(r".")},
+        body_patterns=[_h(r"huggingface\.co|hf\.space")],
+    ),
+
+    # ---- Observability / monitoring ----
+    _Signature(
+        name="Prometheus",
+        category="observability",
+        body_patterns=[_h(r"# HELP |# TYPE |process_cpu_seconds_total")],
+    ),
+    _Signature(
+        name="Grafana",
+        category="observability",
+        body_patterns=[_h(r'"database":"ok".*"version"|grafana/public|<title>Grafana')],
+    ),
+    _Signature(
+        name="Jaeger",
+        category="observability",
+        body_patterns=[_h(r"jaeger|jaegertracing|\"traceID\":")],
+    ),
+    _Signature(
+        name="OpenTelemetry Collector",
+        category="observability",
+        body_patterns=[_h(r"otel|opentelemetry|otlp")],
+    ),
+    _Signature(
+        name="Loki",
+        category="observability",
+        body_patterns=[_h(r'"status":"success".*"resultType":"streams"|loki/api')],
+    ),
+    _Signature(
+        name="Kibana",
+        category="observability",
+        body_patterns=[_h(r'<title>Kibana|kbn-version|kibana_index')],
+        header_patterns={"kbn-version": _h(r".")},
+    ),
+    _Signature(
+        name="OpenSearch Dashboards",
+        category="observability",
+        body_patterns=[_h(r"opensearch_dashboards|osd-version")],
+        header_patterns={"osd-version": _h(r".")},
+    ),
 ]
 
 
@@ -183,28 +350,50 @@ class Fingerprinter(HttpClientMixin):
     # Public API
     # ------------------------------------------------------------------
 
-    async def identify(self, url: str) -> List[str]:
+    async def identify(self, url: str) -> FingerprintResult:
         """
-        Return a sorted list of technology names detected at *url*.
+        Return a :class:`FingerprintResult` for *url* containing detected
+        technologies plus the raw response context needed by downstream modules.
         """
         client = self._client or HttpClient(timeout=15.0, retries=1)
         try:
             resp = await self._fetch(client, url)
             if resp is None:
-                return []
+                return FingerprintResult(url=url)
 
             matched: Set[str] = set()
             headers = {k.lower(): v for k, v in resp.headers.items()}
-            body = resp.text
-            cookies = resp.headers.get("set-cookie", "")
+            body = resp.text or ""
+            set_cookie_raw = resp.headers.get("set-cookie", "")
+
+            # Multiple Set-Cookie headers — httpx joins them with "; "
+            cookies: List[str] = (
+                [v for k, v in resp.headers.multi_items() if k.lower() == "set-cookie"]
+                if hasattr(resp.headers, "multi_items")
+                else ([set_cookie_raw] if set_cookie_raw else [])
+            )
+
+            # Redirect chain from httpx response history
+            redirect_chain: List[str] = []
+            if hasattr(resp, "history"):
+                redirect_chain = [str(r.url) for r in resp.history]
 
             for sig in self._signatures:
-                if self._matches(sig, headers, body, cookies):
+                if self._matches(sig, headers, body, set_cookie_raw):
                     matched.add(sig.name)
                     logger.debug("Matched %s (%s) on %s", sig.name, sig.category, url)
 
-            logger.info("Fingerprinted %s — %d technologies", url, len(matched))
-            return sorted(matched)
+            technologies = sorted(matched)
+            logger.info("Fingerprinted %s — %d technologies", url, len(technologies))
+
+            return FingerprintResult(
+                url=url,
+                technologies=technologies,
+                raw_headers=headers,
+                body_excerpt=body[:512],
+                cookies=cookies,
+                redirect_chain=redirect_chain,
+            )
         finally:
             if self._owns_client and client is not self._client:
                 await client.close()

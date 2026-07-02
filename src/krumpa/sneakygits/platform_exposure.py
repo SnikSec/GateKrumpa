@@ -355,6 +355,213 @@ _PLATFORM_PROBES: Tuple[PlatformProbe, ...] = (
         tags=("platform-exposure", "rancher", "kubernetes", "admin-surface"),
         hint_keywords=("rancher", "cluster", "kube", "k8s"),
     ),
+
+    # -----------------------------------------------------------------------
+    # Admin / DevOps surfaces (Epic 2)
+    # -----------------------------------------------------------------------
+    PlatformProbe(
+        product="Jenkins",
+        category="admin",
+        path="/login",
+        body_patterns=("Jenkins", "j_username", "Sign in to Jenkins"),
+        exposed_severity=Severity.INFO,
+        protected_severity=Severity.INFO,
+        tags=("platform-exposure", "jenkins", "admin-surface"),
+        hint_keywords=("jenkins", "ci", "build", "hudson"),
+    ),
+    PlatformProbe(
+        product="Jenkins",
+        category="admin",
+        path="/api/json?tree=jobs[name,url]",
+        body_patterns=('"jobs"', '"name"', '"url"'),
+        exposed_severity=Severity.HIGH,
+        tags=("platform-exposure", "jenkins", "admin-surface", "unauthenticated"),
+        hint_keywords=("jenkins", "ci", "build", "hudson"),
+    ),
+    PlatformProbe(
+        product="Confluence",
+        category="admin",
+        path="/status",
+        body_patterns=('"state":"RUNNING"', '"state": "RUNNING"'),
+        exposed_severity=Severity.MEDIUM,
+        tags=("platform-exposure", "confluence", "atlassian", "admin-surface"),
+        hint_keywords=("confluence", "wiki", "atlassian"),
+    ),
+    PlatformProbe(
+        product="Confluence",
+        category="admin",
+        path="/rest/api/space",
+        body_patterns=('"results"', '"key"', '"type"'),
+        exposed_severity=Severity.HIGH,
+        tags=("platform-exposure", "confluence", "atlassian", "admin-surface", "unauthenticated"),
+        hint_keywords=("confluence", "wiki", "atlassian"),
+    ),
+    PlatformProbe(
+        product="Jira",
+        category="admin",
+        path="/rest/api/2/serverInfo",
+        body_patterns=('"serverTitle"', '"version"', '"baseUrl"'),
+        exposed_severity=Severity.HIGH,
+        tags=("platform-exposure", "jira", "atlassian", "admin-surface"),
+        hint_keywords=("jira", "issue", "atlassian", "tracker"),
+    ),
+    PlatformProbe(
+        product="Tomcat Manager",
+        category="admin",
+        path="/manager/html",
+        body_patterns=("Apache Tomcat", "Tomcat Web Application Manager"),
+        exposed_severity=Severity.CRITICAL,
+        tags=("platform-exposure", "tomcat", "admin-surface", "rce-risk"),
+        hint_keywords=("tomcat", "java", "catalina"),
+    ),
+    PlatformProbe(
+        product="Tomcat Host Manager",
+        category="admin",
+        path="/host-manager/html",
+        body_patterns=("Apache Tomcat", "Tomcat Virtual Host Manager"),
+        exposed_severity=Severity.CRITICAL,
+        tags=("platform-exposure", "tomcat", "admin-surface"),
+        hint_keywords=("tomcat", "java", "catalina"),
+    ),
+    PlatformProbe(
+        product="Kafka UI",
+        category="admin",
+        path="/api/clusters",
+        body_patterns=('"clusters"', '"bootstrapServers"', '"id"'),
+        exposed_severity=Severity.HIGH,
+        tags=("platform-exposure", "kafka", "admin-surface"),
+        hint_keywords=("kafka", "broker", "topic", "queue"),
+    ),
+    PlatformProbe(
+        product="RabbitMQ Management",
+        category="admin",
+        path="/api/nodes",
+        body_patterns=('"name"', '"running"', '"mem_used"'),
+        exposed_severity=Severity.HIGH,
+        tags=("platform-exposure", "rabbitmq", "admin-surface", "unauthenticated"),
+        hint_keywords=("rabbitmq", "mq", "queue", "amqp"),
+    ),
+    PlatformProbe(
+        product="JMX Jolokia",
+        category="admin",
+        path="/jolokia/",
+        body_patterns=('"status"', '"request"', 'jolokia'),
+        exposed_severity=Severity.HIGH,
+        tags=("platform-exposure", "jmx", "jolokia", "java", "admin-surface"),
+        hint_keywords=("jolokia", "jmx", "java", "tomcat", "spring"),
+    ),
+    PlatformProbe(
+        product="JMX Jolokia",
+        category="admin",
+        path="/jolokia/version",
+        body_patterns=('"agent"', '"protocol"', '"config"'),
+        exposed_severity=Severity.HIGH,
+        tags=("platform-exposure", "jmx", "jolokia", "java", "admin-surface"),
+        hint_keywords=("jolokia", "jmx", "java", "tomcat", "spring"),
+    ),
+    PlatformProbe(
+        product="vCenter",
+        category="admin",
+        path="/rest/vcenter/host",
+        body_patterns=('"value"', '"host"', '"name"'),
+        exposed_severity=Severity.CRITICAL,
+        tags=("platform-exposure", "vcenter", "vmware", "admin-surface"),
+        hint_keywords=("vcenter", "vmware", "vsphere", "esxi"),
+    ),
+    PlatformProbe(
+        product="vCenter UI",
+        category="admin",
+        path="/ui/",
+        body_patterns=("vSphere Client", "VMware vCenter"),
+        exposed_severity=Severity.MEDIUM,
+        tags=("platform-exposure", "vcenter", "vmware", "admin-surface"),
+        hint_keywords=("vcenter", "vmware", "vsphere"),
+    ),
+
+    # -----------------------------------------------------------------------
+    # AI / ML infrastructure surfaces
+    # -----------------------------------------------------------------------
+    PlatformProbe(
+        product="MLflow Tracking Server",
+        category="ai-infra",
+        path="/api/2.0/mlflow/experiments/list",
+        body_patterns=('"experiments"', '"experiment_id"'),
+        exposed_severity=Severity.HIGH,
+        tags=("platform-exposure", "mlflow", "ai-infra", "unauthenticated"),
+        hint_keywords=("mlflow", "ml", "model", "experiment", "tracking"),
+    ),
+    PlatformProbe(
+        product="MLflow Tracking Server",
+        category="ai-infra",
+        path="/api/2.0/mlflow/registered-models/list",
+        body_patterns=('"registered_models"', '"name"'),
+        exposed_severity=Severity.HIGH,
+        tags=("platform-exposure", "mlflow", "ai-infra", "model-registry"),
+        hint_keywords=("mlflow", "ml", "model", "registry"),
+    ),
+    PlatformProbe(
+        product="Kubeflow Pipelines",
+        category="ai-infra",
+        path="/apis/v1beta1/pipelines",
+        body_patterns=('"pipelines"', '"pipeline_id"', '"name"'),
+        exposed_severity=Severity.HIGH,
+        tags=("platform-exposure", "kubeflow", "ai-infra", "kubernetes"),
+        hint_keywords=("kubeflow", "pipeline", "ml", "kfp"),
+    ),
+    PlatformProbe(
+        product="Triton Inference Server",
+        category="ai-infra",
+        path="/v2/health/ready",
+        body_patterns=(),
+        exposed_severity=Severity.MEDIUM,
+        tags=("platform-exposure", "triton", "ai-infra", "inference"),
+        hint_keywords=("triton", "inference", "nvidia", "model"),
+    ),
+    PlatformProbe(
+        product="Triton Inference Server",
+        category="ai-infra",
+        path="/v2/models",
+        body_patterns=('"models"', '"name"', '"state"'),
+        exposed_severity=Severity.HIGH,
+        tags=("platform-exposure", "triton", "ai-infra", "inference", "model-list"),
+        hint_keywords=("triton", "inference", "nvidia", "model"),
+    ),
+    PlatformProbe(
+        product="Ollama",
+        category="ai-infra",
+        path="/api/tags",
+        body_patterns=('"models"', '"name"', '"digest"'),
+        exposed_severity=Severity.HIGH,
+        tags=("platform-exposure", "ollama", "ai-infra", "llm"),
+        hint_keywords=("ollama", "llm", "model", "llama"),
+    ),
+    PlatformProbe(
+        product="Gradio",
+        category="ai-infra",
+        path="/info",
+        body_patterns=('"id"', '"space_id"', '"version"'),
+        exposed_severity=Severity.MEDIUM,
+        tags=("platform-exposure", "gradio", "ai-infra"),
+        hint_keywords=("gradio", "huggingface", "space", "demo"),
+    ),
+    PlatformProbe(
+        product="LangServe",
+        category="ai-infra",
+        path="/docs",
+        body_patterns=('"openapi"', '"paths"', '"invoke"'),
+        exposed_severity=Severity.MEDIUM,
+        tags=("platform-exposure", "langserve", "langchain", "ai-infra"),
+        hint_keywords=("langserve", "langchain", "llm", "chain"),
+    ),
+    PlatformProbe(
+        product="OpenAI-compatible API",
+        category="ai-infra",
+        path="/v1/models",
+        body_patterns=('"object":"list"', '"data"', '"id"'),
+        exposed_severity=Severity.HIGH,
+        tags=("platform-exposure", "openai-api", "ai-infra", "llm"),
+        hint_keywords=("openai", "llm", "gpt", "model", "chat"),
+    ),
 )
 
 
@@ -445,6 +652,12 @@ class PlatformExposureAnalyzer(HttpClientMixin):
                 for item in value:
                     if isinstance(item, str):
                         tokens.update(re.findall(r"[a-z0-9]+", item.lower()))
+        # Also consume the rich FingerprintResult when available
+        fp_result = target.metadata.get("fingerprint_result")
+        if fp_result is not None:
+            techs = getattr(fp_result, "technologies", [])
+            for tech in techs:
+                tokens.update(re.findall(r"[a-z0-9]+", tech.lower()))
         return tokens
 
     @staticmethod

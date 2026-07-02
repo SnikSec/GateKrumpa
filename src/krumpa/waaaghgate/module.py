@@ -20,6 +20,9 @@ from krumpa.waaaghgate.finding_lifecycle import FindingLifecycleManager
 from krumpa.waaaghgate.trend_tracker import TrendTracker
 from krumpa.waaaghgate.sla_enforcer import SlaEnforcer
 from krumpa.waaaghgate.badge_generator import BadgeGenerator
+from krumpa.core.attack_chain import AttackChainBuilder
+from krumpa.core.hvt_scorer import HVTScorer
+from krumpa.waaaghgate.blast_radius import BlastRadiusAnalyzer
 
 logger = logging.getLogger("krumpa.waaaghgate")
 
@@ -31,6 +34,7 @@ class WaaaghGateModule(BaseModule):
     description = "CI/CD Integration — quality-gate policies and pipeline reporting"
     dependencies: List[str] = [
         "RedTeef", "BossKey", "WaaaghLogic", "OpenKrump",
+        "cloudstrike", "aifuzz", "modelhunt", "reposcout",
     ]  # evaluates all findings — runs last
 
     def __init__(
@@ -177,5 +181,25 @@ class WaaaghGateModule(BaseModule):
         if self.gate_result:
             gate_badge = self._badge_gen.generate_gate_badge(self.gate_result.passed)
             ctx.metadata["badge_gate"] = gate_badge
+
+        # 12. Attack chain correlation
+        chains = AttackChainBuilder().build(ctx)
+        ctx.metadata["attack_chain_count"] = len(chains)
+        logger.info("Attack chains identified: %d", len(chains))
+
+        # 13. High-value target scoring
+        hvt_scores = HVTScorer().score(ctx)
+        ctx.metadata["hvt_top_target"] = hvt_scores[0].target.url if hvt_scores else None
+
+        # 14. Blast radius analysis
+        blast_results = BlastRadiusAnalyzer().analyze(ctx)
+        escalated = sum(1 for r in blast_results if r.was_escalated)
+        deprioritised = sum(1 for r in blast_results if r.was_deprioritised)
+        if escalated or deprioritised:
+            logger.info(
+                "Blast radius: %d finding(s) escalated, %d deprioritised",
+                escalated, deprioritised,
+            )
+        ctx.metadata["sankey_data"] = BlastRadiusAnalyzer().generate_sankey_data(ctx)
 
         return []  # no new findings
