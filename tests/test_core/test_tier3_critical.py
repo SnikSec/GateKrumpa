@@ -10,11 +10,9 @@ Tests for Tier 3 Critical features:
 
 from __future__ import annotations
 
-import asyncio
 import json
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
-from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -513,7 +511,7 @@ class TestXxeChecker:
             method="GET",
             headers={"Content-Type": "application/xml"},
         )
-        findings = await checker.check(target)
+        _findings = await checker.check(target)
         # Should have at least attempted to send payloads
         assert len(client.requests) > 0
 

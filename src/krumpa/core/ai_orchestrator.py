@@ -26,7 +26,7 @@ import json
 import logging
 from typing import Any, Dict, List, Optional
 
-from krumpa.core import Finding, ScanContext
+from krumpa.core import ScanContext
 
 logger = logging.getLogger("krumpa.core.ai_orchestrator")
 

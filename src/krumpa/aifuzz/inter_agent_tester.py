@@ -209,7 +209,7 @@ def _make_finding(
     resp: str,
     framework: str,
 ) -> Finding:
-    from krumpa.core import Finding, Severity
+    from krumpa.core import Finding
     return Finding(
         title=f"Inter-agent trust escalation: {name}",
         description=(

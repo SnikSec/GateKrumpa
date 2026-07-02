@@ -742,7 +742,7 @@ class SamlAnalyzer(HttpClientMixin):
                     "type": "signature",
                     "algo": algo_name.upper(),
                     "risk": risk,
-                    "remediation": f"Upgrade to RSA-SHA256 or stronger.",
+                    "remediation": "Upgrade to RSA-SHA256 or stronger.",
                 })
 
         # Digest algorithms

@@ -194,7 +194,6 @@ class S3Auditor:
         try:
             resp = client.get_bucket_versioning(Bucket=bucket)
             status = resp.get("Status", "")
-            mfa_delete = resp.get("MFADelete", "")
             if status != "Enabled":
                 return [Finding(
                     title=f"S3 bucket versioning disabled: {bucket}",

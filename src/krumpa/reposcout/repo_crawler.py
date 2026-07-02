@@ -88,7 +88,7 @@ class RepoCrawler:
 
     async def _crawl_github(self, org: str, repo_name: str, target: Target) -> Optional[RepoData]:
         try:
-            from github import Github, GithubException, Auth
+            from github import Github, Auth
         except ImportError:
             logger.warning(
                 "PyGithub not installed — reposcout GitHub support disabled. "

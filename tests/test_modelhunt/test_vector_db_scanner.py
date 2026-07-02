@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import pytest
 
-from krumpa.core import ScanContext, Severity, Target
+from krumpa.core import Severity, Target
 from krumpa.modelhunt.vector_db_scanner import VectorDbScanner, _base_url, _count_collections
 
 

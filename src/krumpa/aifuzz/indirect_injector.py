@@ -19,7 +19,6 @@ from typing import Any, List, Tuple
 
 from krumpa.core import Finding, ScanContext, Severity, Target
 from krumpa.core.http_client import HttpClient, HttpClientMixin
-from krumpa.aifuzz.prompt_injector import _send_chat, _resolve_chat_endpoints
 
 logger = logging.getLogger("krumpa.aifuzz.indirect_injector")
 

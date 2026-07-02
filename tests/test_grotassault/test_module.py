@@ -3,12 +3,11 @@
 import json
 import pytest
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
-from krumpa.core import Finding, ScanContext, Severity, Target
+from krumpa.core import ScanContext, Target
 from krumpa.grotassault.module import GrotAssaultModule
 from krumpa.grotassault.fuzzer import FuzzTarget
-from krumpa.grotassault.mutator import MutationStrategy
 
 
 # ------------------------------------------------------------------

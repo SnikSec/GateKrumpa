@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Dict, List
+from typing import List
 
 from krumpa.core import Finding, Severity, Target
 from krumpa.reposcout.repo_crawler import RepoData

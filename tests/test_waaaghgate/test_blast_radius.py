@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-import pytest
 
 from krumpa.core import Finding, ScanContext, Severity, Target
 from krumpa.core.attack_chain import AttackChain
-from krumpa.waaaghgate.blast_radius import BlastRadiusAnalyzer, BlastRadiusResult
+from krumpa.waaaghgate.blast_radius import BlastRadiusAnalyzer
 
 
 def _finding(title: str, severity: Severity, tags: list | None = None, url: str = "https://example.com") -> Finding:
@@ -54,7 +53,7 @@ class TestBlastRadiusAnalyzer:
         assert result.adjusted_severity == Severity.HIGH
 
     def test_escalates_medium_on_critical_asset(self):
-        from krumpa.core.hvt_scorer import TargetScore, HVTScorer
+        from krumpa.core.hvt_scorer import TargetScore
         target = Target(url="https://payment.example.com")
         finding = _finding("Missing rate limit", Severity.MEDIUM, url="https://payment.example.com")
         finding.target = target

@@ -53,7 +53,7 @@ def _is_vision_model(session: Any) -> bool:
 def _generate_white_on_white_image(instruction: str) -> Optional[bytes]:
     """Generate a PNG with white text on a white background (humanly invisible)."""
     try:
-        from PIL import Image, ImageDraw, ImageFont  # type: ignore[import]
+        from PIL import Image, ImageDraw  # type: ignore[import]
         img = Image.new("RGB", (512, 128), color=(255, 255, 255))
         draw = ImageDraw.Draw(img)
         # White text on white — invisible to human eye, readable by OCR/vision model

@@ -79,6 +79,14 @@ class TestToolRegistration:
             "gatekrumpa_import",
             "gatekrumpa_export",
             "gatekrumpa_generate_sdk",
+            # Phase 1B additions
+            "gatekrumpa_cloud_scan",
+            "gatekrumpa_ai_attack",
+            "gatekrumpa_repo_scan",
+            "gatekrumpa_chain_attack",
+            # Phase 3 additions
+            "gatekrumpa_verify",
+            "gatekrumpa_push_to_tracker",
         }
         assert names == expected
 
@@ -86,7 +94,7 @@ class TestToolRegistration:
         server = create_server()
         register_default_tools(server)
         names = self._registered_names(server)
-        assert len(names) == 7
+        assert len(names) == 13
 
     def test_config_passed_to_server(self) -> None:
         config = {"http": {"timeout": 99}}
@@ -101,7 +109,7 @@ class TestToolRegistration:
         register_default_tools(server)
         names = self._registered_names(server)
         # FastMCP overwrites tools with same name
-        assert len(names) == 7
+        assert len(names) == 13
 
     def test_custom_tool_alongside(self) -> None:
         """Custom user-defined tools coexist with defaults."""
@@ -115,7 +123,7 @@ class TestToolRegistration:
 
         names = self._registered_names(server)
         assert "custom_tool" in names
-        assert len(names) == 8
+        assert len(names) == 14
 
 
 # ===================================================================

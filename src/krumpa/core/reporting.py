@@ -85,7 +85,6 @@ def to_sarif(ctx: ScanContext) -> Dict[str, Any]:
     # Build chain step lookup: finding_id → list of other step URLs in chain
     chain_related: Dict[str, List[Dict]] = {}
     for chain in ctx.metadata.get("attack_chains", []):
-        step_ids = [s.id for s in chain.steps]
         for step in chain.steps:
             others = [
                 {

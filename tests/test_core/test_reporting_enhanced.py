@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import xml.etree.ElementTree as ET
 
-import pytest
 
 from krumpa.core import Finding, ScanContext, Severity, Target
 from krumpa.core.reporting import (

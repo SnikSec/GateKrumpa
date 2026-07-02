@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, List, NamedTuple
+from typing import List, NamedTuple
 
 from krumpa.core import Finding, Severity, Target
 from krumpa.reposcout.repo_crawler import RepoData

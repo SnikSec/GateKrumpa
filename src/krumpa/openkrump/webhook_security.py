@@ -216,12 +216,12 @@ class WebhookSecurityAnalyzer(HttpClientMixin):
                 # If server accepts the URL without validation
                 if resp.status_code in (200, 201, 202):
                     findings.append(Finding(
-                        title=f"Webhook SSRF: internal URL accepted as callback",
+                        title="Webhook SSRF: internal URL accepted as callback",
                         description=(
-                            f"The webhook registration endpoint accepted an "
-                            f"internal/dangerous URL as the callback destination. "
-                            f"When the webhook fires, the server will make a "
-                            f"request to the attacker-controlled internal URL."
+                            "The webhook registration endpoint accepted an "
+                            "internal/dangerous URL as the callback destination. "
+                            "When the webhook fires, the server will make a "
+                            "request to the attacker-controlled internal URL."
                         ),
                         severity=Severity.HIGH,
                         target=target,
@@ -278,9 +278,9 @@ class WebhookSecurityAnalyzer(HttpClientMixin):
                     findings.append(Finding(
                         title=f"Webhook accepts dangerous URL scheme: {payload[:30]}",
                         description=(
-                            f"The webhook endpoint accepted a non-HTTP URL scheme "
-                            f"as a callback destination. Only https:// (and "
-                            f"optionally http://) should be accepted."
+                            "The webhook endpoint accepted a non-HTTP URL scheme "
+                            "as a callback destination. Only https:// (and "
+                            "optionally http://) should be accepted."
                         ),
                         severity=Severity.MEDIUM,
                         target=target,
@@ -354,12 +354,12 @@ class WebhookSecurityAnalyzer(HttpClientMixin):
 
                     if resp.status_code == 200:
                         findings.append(Finding(
-                            title=f"Webhook delivery accepted without valid signature",
+                            title="Webhook delivery accepted without valid signature",
                             description=(
-                                f"A webhook delivery endpoint accepted a payload "
-                                f"with a fake/invalid signature. This allows an "
-                                f"attacker to forge webhook events and trigger "
-                                f"server-side actions (e.g., fake payment confirmations)."
+                                "A webhook delivery endpoint accepted a payload "
+                                "with a fake/invalid signature. This allows an "
+                                "attacker to forge webhook events and trigger "
+                                "server-side actions (e.g., fake payment confirmations)."
                             ),
                             severity=Severity.HIGH,
                             target=target,

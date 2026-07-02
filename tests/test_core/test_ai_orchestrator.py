@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 
 from krumpa.core.ai_orchestrator import TryHarderAgent, AttackPlannerAgent, _autogen_available
 from krumpa.core import ScanContext

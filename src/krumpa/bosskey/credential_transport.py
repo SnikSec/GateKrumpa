@@ -133,7 +133,7 @@ class CredentialTransportAuditor(HttpClientMixin):
             ),
             severity=Severity.HIGH,
             target=target,
-            evidence=f"URL scheme: http://",
+            evidence="URL scheme: http://",
             remediation=(
                 "Enforce HTTPS on all endpoints that handle credentials. "
                 "Redirect HTTP to HTTPS and set HSTS headers."

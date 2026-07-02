@@ -2,11 +2,10 @@
 
 import pytest
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from krumpa.core import Finding, ScanContext, Severity, Target
 from krumpa.redteef.module import RedTeefModule, _lower_severity
-from krumpa.redteef.payload_builder import ProofPayload
 
 
 # ------------------------------------------------------------------

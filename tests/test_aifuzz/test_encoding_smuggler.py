@@ -7,8 +7,8 @@ import pytest
 from krumpa.core import ScanContext, Target
 from krumpa.aifuzz.encoding_smuggler import (
     EncodingSmuggler,
-    _morse_encode, _multilingual_chain, _compound_b64_rot13,
-    _compound_rot13_leet, _math_unicode, _zalgo, _whitespace_stego,
+    _morse_encode, _compound_b64_rot13,
+    _math_unicode, _zalgo, _whitespace_stego,
     _ADVANCED_MUTATIONS,
 )
 from krumpa.aifuzz.module import _AiSession

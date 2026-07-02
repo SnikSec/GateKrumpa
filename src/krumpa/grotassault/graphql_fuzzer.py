@@ -51,7 +51,7 @@ def _field_duplication(count: int) -> str:
 
 def _directive_overload(count: int) -> str:
     """Stack many directives on a single field."""
-    dirs = " ".join(f"@skip(if: false)" for _ in range(count))
+    dirs = " ".join("@skip(if: false)" for _ in range(count))
     return f'{{ __typename {dirs} }}'
 
 

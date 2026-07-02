@@ -11,11 +11,16 @@ from krumpa.cloudstrike.s3_auditor import S3Auditor
 
 class _S3Exceptions:
     """Minimal exceptions namespace."""
-    class NoSuchPublicAccessBlockConfiguration(Exception): pass
-    class NoSuchBucketPolicy(Exception): pass
-    class NoSuchCORSConfiguration(Exception): pass
-    class ServerSideEncryptionConfigurationNotFoundError(Exception): pass
-    class ReplicationConfigurationNotFoundError(Exception): pass
+    class NoSuchPublicAccessBlockConfiguration(Exception):
+        pass
+    class NoSuchBucketPolicy(Exception):
+        pass
+    class NoSuchCORSConfiguration(Exception):
+        pass
+    class ServerSideEncryptionConfigurationNotFoundError(Exception):
+        pass
+    class ReplicationConfigurationNotFoundError(Exception):
+        pass
 
 
 class _MockS3:

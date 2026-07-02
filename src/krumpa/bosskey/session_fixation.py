@@ -78,7 +78,7 @@ class SessionFixationChecker(HttpClientMixin):
         if result.is_vulnerable:
             names = ", ".join(result.unchanged_ids)
             findings.append(Finding(
-                title=f"Session fixation — ID not rotated after login",
+                title="Session fixation — ID not rotated after login",
                 description=(
                     f"Session cookie(s) [{names}] were not regenerated after "
                     f"submitting credentials to {result.endpoint}. An attacker "

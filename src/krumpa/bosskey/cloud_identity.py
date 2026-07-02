@@ -18,7 +18,6 @@ import json
 import logging
 import re
 from typing import Any, List
-from urllib.parse import urljoin, urlparse
 
 from krumpa.core import Finding, ScanContext, Severity, Target
 from krumpa.core.http_client import HttpClient, HttpClientMixin
@@ -54,7 +53,6 @@ class CloudIdentityAnalyzer(HttpClientMixin):
 
         # Determine which identity provider to probe based on fingerprint signals
         fp_result = ctx.metadata.get("fingerprints", {}).get(target.url)
-        techs = set(getattr(fp_result, "technologies", [])) if fp_result else set()
         redirect_chain = list(getattr(fp_result, "redirect_chain", [])) if fp_result else []
         all_urls = [target.url] + redirect_chain
 
@@ -308,7 +306,7 @@ class CloudIdentityAnalyzer(HttpClientMixin):
                 ),
                 severity=Severity.MEDIUM,
                 target=target,
-                evidence=f"Header present: x-goog-authenticated-user-jwt (value redacted)",
+                evidence="Header present: x-goog-authenticated-user-jwt (value redacted)",
                 remediation=(
                     "Validate the IAP JWT in every request handler using the Google "
                     "Cloud IAP verification library. Ensure the backend is not "

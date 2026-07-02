@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 import pytest
 
 from krumpa.core import Severity, Target
-from krumpa.bosskey.auth_probe import AuthEndpoint, AuthProbe, _LoginResult
+from krumpa.bosskey.auth_probe import AuthEndpoint, AuthProbe
 
 
 # ------------------------------------------------------------------

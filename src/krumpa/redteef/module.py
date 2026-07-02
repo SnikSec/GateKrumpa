@@ -273,7 +273,7 @@ class RedTeefModule(BaseModule):
         new_tags = list(finding.tags) + [label, "redteef"]
         new_evidence = finding.evidence
         if result.response_snippets:
-            new_evidence += f"\n--- PoC evidence ---\n" + "\n".join(result.response_snippets)
+            new_evidence += "\n--- PoC evidence ---\n" + "\n".join(result.response_snippets)
         if result.notes:
             new_evidence += f"\nNotes: {result.notes}"
 

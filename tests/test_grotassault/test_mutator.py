@@ -1,6 +1,5 @@
 """Tests for krumpa.grotassault.mutator — payload mutation engine."""
 
-import pytest
 from krumpa.grotassault.mutator import Mutator, MutationStrategy
 
 
@@ -79,9 +78,9 @@ class TestMutationStrategies:
 
     def test_all_strategy_expands_to_every_category(self):
         m = Mutator(strategies=[MutationStrategy.ALL], max_payloads_per_field=200)
-        payloads = m.generate("")
+        _payloads = m.generate("")
         # Should be the same as default (no strategies specified)
-        m2 = Mutator(max_payloads_per_field=200, seed=0)
+        _m2 = Mutator(max_payloads_per_field=200, seed=0)
         m_all = Mutator(strategies=[MutationStrategy.ALL], max_payloads_per_field=200, seed=0)
         # Both should have payloads from all categories
         assert len(m_all.generate("")) > 5

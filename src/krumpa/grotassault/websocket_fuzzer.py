@@ -235,9 +235,9 @@ class WebSocketFuzzer(HttpClientMixin):
             findings.append(Finding(
                 title=f"Unencrypted WebSocket: {endpoint.url}",
                 description=(
-                    f"WebSocket endpoint uses ws:// (unencrypted) instead of wss://. "
-                    f"All messages are transmitted in plaintext, allowing interception "
-                    f"and modification by network attackers."
+                    "WebSocket endpoint uses ws:// (unencrypted) instead of wss://. "
+                    "All messages are transmitted in plaintext, allowing interception "
+                    "and modification by network attackers."
                 ),
                 severity=Severity.HIGH,
                 target=target,
@@ -414,10 +414,10 @@ class WebSocketFuzzer(HttpClientMixin):
                             findings.append(Finding(
                                 title=f"WebSocket message injection reflected: {endpoint.url}",
                                 description=(
-                                    f"A fuzz payload sent to the WebSocket polling "
-                                    f"endpoint was reflected in the response. This "
-                                    f"indicates the server processes and echoes "
-                                    f"WebSocket message content without sanitization."
+                                    "A fuzz payload sent to the WebSocket polling "
+                                    "endpoint was reflected in the response. This "
+                                    "indicates the server processes and echoes "
+                                    "WebSocket message content without sanitization."
                                 ),
                                 severity=Severity.HIGH,
                                 target=target,

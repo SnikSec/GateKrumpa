@@ -520,9 +520,9 @@ class RememberMeAnalyzer(HttpClientMixin):
                         findings.append(Finding(
                             title=f"Remember-me token '{token.name}' not revoked on logout",
                             description=(
-                                f"After logout, the remember-me token is still accepted. "
-                                f"An attacker who obtains the token retains access "
-                                f"even after the user logs out."
+                                "After logout, the remember-me token is still accepted. "
+                                "An attacker who obtains the token retains access "
+                                "even after the user logs out."
                             ),
                             severity=Severity.HIGH,
                             target=target,

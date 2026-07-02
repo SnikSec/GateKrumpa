@@ -464,7 +464,7 @@ class WorkflowIntegrityTester(HttpClientMixin):
                             ),
                             severity=Severity.HIGH,
                             target=target,
-                            evidence=f"Both applications returned 200 with 'applied'/'discount'",
+                            evidence="Both applications returned 200 with 'applied'/'discount'",
                             remediation=(
                                 "Track applied coupons per cart/session. Reject "
                                 "duplicate applications. Enforce per-user usage limits."

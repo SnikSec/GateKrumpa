@@ -17,11 +17,11 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass
+from typing import Any, List
 from urllib.parse import urlparse
 
-from krumpa.core import Finding, ScanContext, Severity, Target
+from krumpa.core import Finding, Severity, Target
 from krumpa.core.http_client import HttpClient, HttpClientMixin
 
 logger = logging.getLogger("krumpa.modelhunt.vector_db_scanner")

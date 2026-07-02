@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from krumpa.core import ScanContext, Severity, Target
-from krumpa.cloudstrike.iam_pathfinder import IamPathfinder, _DIRECT_PRIVESC
+from krumpa.cloudstrike.iam_pathfinder import IamPathfinder
 
 
 class _MockIam:

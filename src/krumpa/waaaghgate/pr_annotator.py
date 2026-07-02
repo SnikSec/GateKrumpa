@@ -226,8 +226,8 @@ class PrAnnotator:
             "",
             f"**Result: {'❌ FAILED' if report.conclusion == 'failure' else '✅ PASSED'}**",
             "",
-            f"| Severity | Count |",
-            f"|----------|-------|",
+            "| Severity | Count |",
+            "|----------|-------|",
         ]
 
         for sev_name in ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"]:

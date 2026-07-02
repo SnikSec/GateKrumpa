@@ -5,10 +5,9 @@ from __future__ import annotations
 import base64
 import json
 
-import pytest
 
 from krumpa.core import Severity, Target
-from krumpa.bosskey.session_analyzer import SessionAnalyzer, CookieInfo, JWTInfo
+from krumpa.bosskey.session_analyzer import SessionAnalyzer
 
 
 # ------------------------------------------------------------------

@@ -545,7 +545,7 @@ class _SdkGenerator:
 
         # Body
         if m.body_model:
-            lines.append(f"        _json = body.to_dict() if hasattr(body, 'to_dict') else body")
+            lines.append("        _json = body.to_dict() if hasattr(body, 'to_dict') else body")
 
         # Request call
         call_args = [f'"{m.http_method}"', "url"]

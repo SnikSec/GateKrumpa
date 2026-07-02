@@ -3,9 +3,9 @@
 import json
 import pytest
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
-from krumpa.core import Finding, ScanContext, Severity, Target
+from krumpa.core import ScanContext
 from krumpa.openkrump.module import OpenKrumpModule
 
 

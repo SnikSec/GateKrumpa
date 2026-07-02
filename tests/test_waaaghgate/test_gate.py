@@ -1,8 +1,7 @@
 """Tests for krumpa.waaaghgate.gate — quality-gate policy engine."""
 
-import pytest
 from krumpa.core import Finding, Severity, Target
-from krumpa.waaaghgate.gate import GatePolicy, GateResult, PolicyViolation
+from krumpa.waaaghgate.gate import GatePolicy
 
 
 def _finding(sev: Severity, **kw) -> Finding:
