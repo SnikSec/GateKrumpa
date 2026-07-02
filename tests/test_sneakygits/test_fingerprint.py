@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from krumpa.sneakygits.fingerprint import Fingerprinter, _Signature, _h
+from krumpa.sneakygits.fingerprint import Fingerprinter, FingerprintResult, _Signature, _h
 
 
 # ------------------------------------------------------------------
@@ -106,8 +106,9 @@ class TestFingerprinterIdentify:
             text="<html></html>",
         ))
         fp = Fingerprinter(http_client=client)
-        techs = await fp.identify("https://example.com")
-        assert "Nginx" in techs
+        result = await fp.identify("https://example.com")
+        assert isinstance(result, FingerprintResult)
+        assert "Nginx" in result.technologies
 
     async def test_detects_multiple_technologies(self):
         client = _FakeHttpClient(_FakeResponse(
@@ -120,17 +121,18 @@ class TestFingerprinterIdentify:
             text='<html><script src="/wp-content/themes/starter/app.js"></script></html>',
         ))
         fp = Fingerprinter(http_client=client)
-        techs = await fp.identify("https://example.com")
-        assert "Nginx" in techs
-        assert "PHP" in techs
-        assert "WordPress" in techs
+        result = await fp.identify("https://example.com")
+        assert "Nginx" in result.technologies
+        assert "PHP" in result.technologies
+        assert "WordPress" in result.technologies
 
     async def test_returns_empty_on_404(self):
         client = _FakeHttpClient(_FakeResponse(status_code=404, text=""))
         fp = Fingerprinter(http_client=client)
-        techs = await fp.identify("https://example.com")
-        # 404 still returns a response — may or may not match signatures
-        assert isinstance(techs, list)
+        result = await fp.identify("https://example.com")
+        # 404 still returns a FingerprintResult — may or may not match signatures
+        assert isinstance(result, FingerprintResult)
+        assert isinstance(result.technologies, list)
 
     async def test_returns_empty_on_fetch_failure(self):
         class _FailClient:
@@ -140,8 +142,9 @@ class TestFingerprinterIdentify:
                 pass
 
         fp = Fingerprinter(http_client=_FailClient())
-        techs = await fp.identify("https://example.com")
-        assert techs == []
+        result = await fp.identify("https://example.com")
+        assert isinstance(result, FingerprintResult)
+        assert result.technologies == []
 
     async def test_extra_signatures(self):
         custom_sig = _Signature(
@@ -154,8 +157,8 @@ class TestFingerprinterIdentify:
             text="<html><meta name='x-custom-marker'></html>",
         ))
         fp = Fingerprinter(http_client=client, extra_signatures=[custom_sig])
-        techs = await fp.identify("https://example.com")
-        assert "MyCustomTech" in techs
+        result = await fp.identify("https://example.com")
+        assert "MyCustomTech" in result.technologies
 
     async def test_detects_react(self):
         client = _FakeHttpClient(_FakeResponse(
@@ -163,8 +166,8 @@ class TestFingerprinterIdentify:
             text='<html><div id="__next" data-reactroot=""></div><script src="react.production.min.js"></script></html>',
         ))
         fp = Fingerprinter(http_client=client)
-        techs = await fp.identify("https://example.com")
-        assert "React" in techs
+        result = await fp.identify("https://example.com")
+        assert "React" in result.technologies
 
     async def test_detects_cloudflare(self):
         client = _FakeHttpClient(_FakeResponse(
@@ -176,8 +179,8 @@ class TestFingerprinterIdentify:
             text="<html></html>",
         ))
         fp = Fingerprinter(http_client=client)
-        techs = await fp.identify("https://example.com")
-        assert "Cloudflare" in techs
+        result = await fp.identify("https://example.com")
+        assert "Cloudflare" in result.technologies
 
     async def test_sorted_output(self):
         client = _FakeHttpClient(_FakeResponse(
@@ -189,5 +192,25 @@ class TestFingerprinterIdentify:
             text="<html></html>",
         ))
         fp = Fingerprinter(http_client=client)
-        techs = await fp.identify("https://example.com")
-        assert techs == sorted(techs)
+        result = await fp.identify("https://example.com")
+        assert result.technologies == sorted(result.technologies)
+
+    async def test_result_carries_raw_headers(self):
+        client = _FakeHttpClient(_FakeResponse(
+            headers={"server": "nginx/1.21", "x-amzn-trace-id": "Root=1-abc"},
+            text="<html></html>",
+        ))
+        fp = Fingerprinter(http_client=client)
+        result = await fp.identify("https://example.com")
+        assert "server" in result.raw_headers
+        assert result.body_excerpt == "<html></html>"
+        assert "AWS ALB" in result.technologies
+
+    async def test_result_url_matches_input(self):
+        client = _FakeHttpClient(_FakeResponse(
+            headers={"server": "nginx/1.21"},
+            text="",
+        ))
+        fp = Fingerprinter(http_client=client)
+        result = await fp.identify("https://target.example.com")
+        assert result.url == "https://target.example.com"

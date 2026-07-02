@@ -32,19 +32,26 @@ from krumpa.core.reporting import to_json, to_sarif, to_markdown, to_html, to_ju
 # ------------------------------------------------------------------
 
 _MODULE_REGISTRY: dict[str, tuple[str, str]] = {
-    "sneakygits":  ("krumpa.sneakygits.module",  "SneakyGitsModule"),
-    "bosskey":     ("krumpa.bosskey.module",      "BossKeyModule"),
-    "waaaghlogic": ("krumpa.waaaghlogic.module",  "WaaaghLogicModule"),
-    "grotassault": ("krumpa.grotassault.module",   "GrotAssaultModule"),
-    "redteef":     ("krumpa.redteef.module",       "RedTeefModule"),
-    "waaaghgate":  ("krumpa.waaaghgate.module",    "WaaaghGateModule"),
-    "openkrump":   ("krumpa.openkrump.module",     "OpenKrumpModule"),
+    "sneakygits":   ("krumpa.sneakygits.module",   "SneakyGitsModule"),
+    "bosskey":      ("krumpa.bosskey.module",       "BossKeyModule"),
+    "waaaghlogic":  ("krumpa.waaaghlogic.module",   "WaaaghLogicModule"),
+    "grotassault":  ("krumpa.grotassault.module",   "GrotAssaultModule"),
+    "redteef":      ("krumpa.redteef.module",       "RedTeefModule"),
+    "waaaghgate":   ("krumpa.waaaghgate.module",    "WaaaghGateModule"),
+    "openkrump":    ("krumpa.openkrump.module",     "OpenKrumpModule"),
+    # Phase 1B — new attack surface modules
+    "cloudstrike":  ("krumpa.cloudstrike.module",   "CloudStrikeModule"),
+    "aifuzz":       ("krumpa.aifuzz.module",         "AiFuzzModule"),
+    # Phase 2 — model analysis + repository targeting
+    "modelhunt":    ("krumpa.modelhunt.module",      "ModelHuntModule"),
+    "reposcout":    ("krumpa.reposcout.module",      "RepoScoutModule"),
 }
 
 # Default pipeline order
 _DEFAULT_ORDER = [
-    "sneakygits", "openkrump", "bosskey",
-    "waaaghlogic", "grotassault", "redteef", "waaaghgate",
+    "sneakygits", "openkrump", "cloudstrike", "reposcout",
+    "bosskey", "waaaghlogic", "aifuzz",
+    "grotassault", "redteef", "modelhunt", "waaaghgate",
 ]
 
 
@@ -152,7 +159,7 @@ def _collect_targets(
 # ------------------------------------------------------------------
 
 @click.group()
-@click.version_option("0.1.0", prog_name="gatekrumpa")
+@click.version_option("0.2.0", prog_name="gatekrumpa")
 @click.option("-v", "--verbose", count=True, help="Increase verbosity (-v info, -vv debug).")
 def cli(verbose: int) -> None:
     """GateKrumpa — modular API security testing platform."""
@@ -166,7 +173,7 @@ def cli(verbose: int) -> None:
 @cli.command()
 @click.option(
     "--target", "-t", "targets", multiple=True,
-    help="Base URL(s) to scan (repeatable: -t URL1 -t URL2).",
+    help="Base URL(s) to scan (repeatable: -t URL1 -t URL2). Use aws://REGION for cloud, github://ORG/REPO for repos.",
 )
 @click.option(
     "--targets-file", "targets_file", default=None,
@@ -183,6 +190,14 @@ def cli(verbose: int) -> None:
     help="Comma-separated output formats: json, sarif, markdown, html, junit (default: json).",
 )
 @click.option("--output", "-o", default=None, help="Output directory for reports (default: stdout).")
+# Cloud options
+@click.option("--aws-profile", "aws_profile", default=None, help="AWS named profile for cloudstrike.")
+@click.option("--aws-region", "aws_region", default="us-east-1", show_default=True, help="AWS region for cloudstrike.")
+# Repo options
+@click.option("--repo-token", "repo_token", default=None, help="GitHub/GitLab personal access token for reposcout.")
+# AI options
+@click.option("--ai-key", "ai_key", default=None, help="API key for AI/LLM endpoint (aifuzz/modelhunt).")
+@click.option("--ai-model", "ai_model", default=None, help="Model identifier for AI endpoint (e.g. gpt-4o).")
 def scan(
     targets: tuple[str, ...],
     targets_file: Optional[str],
@@ -191,6 +206,11 @@ def scan(
     spec: Optional[str],
     formats: str,
     output: Optional[str],
+    aws_profile: Optional[str],
+    aws_region: str,
+    repo_token: Optional[str],
+    ai_key: Optional[str],
+    ai_model: Optional[str],
 ) -> None:
     """Run a security scan against one or more target URLs."""
     config = _load_config(config_path)
@@ -208,6 +228,19 @@ def scan(
             "No targets specified. Use --target, --targets-file, "
             "or add campaign.targets in the config file."
         )
+
+    # Inject CLI cloud/AI/repo options into target metadata
+    for t in all_targets:
+        if aws_profile and not t.metadata.get("aws_profile"):
+            t.metadata["aws_profile"] = aws_profile
+        if aws_region and not t.metadata.get("aws_region"):
+            t.metadata["aws_region"] = aws_region
+        if repo_token and not t.metadata.get("repo_token"):
+            t.metadata["repo_token"] = repo_token
+        if ai_key and not t.metadata.get("ai_api_key"):
+            t.metadata["ai_api_key"] = ai_key
+        if ai_model and not t.metadata.get("ai_model"):
+            t.metadata["ai_model"] = ai_model
 
     # Determine modules
     if modules:
@@ -662,6 +695,61 @@ def mcp_serve(config_path: Optional[str]) -> None:
 
     click.echo("GateKrumpa MCP server starting (stdio)…", err=True)
     server.run(transport="stdio")
+
+
+# ------------------------------------------------------------------
+# verify command  (one-click verification)
+# ------------------------------------------------------------------
+
+@cli.command()
+@click.option("--finding-id", "-f", "finding_id", required=True,
+              help="Finding ID to re-test.")
+@click.option("--input", "-i", "input_path", required=True,
+              help="Path to the JSON scan results file containing the finding.")
+def verify(finding_id: str, input_path: str) -> None:
+    """Re-run the stored verification path for a finding (one-click verification).
+
+    Reports whether the finding is still exploitable (VERIFIED), has been
+    patched (PATCHED), or the result is unclear (INCONCLUSIVE).
+    """
+    from krumpa.core import ScanContext
+    from krumpa.core.http_client import HttpClient
+    from krumpa.waaaghgate.verification_runner import VerificationRunner
+
+    p = Path(input_path)
+    if not p.exists():
+        raise click.BadParameter(f"Scan results file not found: {input_path}")
+
+    data = json.loads(p.read_text(encoding="utf-8"))
+    ctx = ScanContext(scan_id=data.get("scan_id", "unknown"))
+    ctx.metadata["verification_paths"] = data.get("verification_paths", {})
+
+    if finding_id not in ctx.metadata["verification_paths"]:
+        click.echo(
+            f"INCONCLUSIVE — no verification path stored for finding {finding_id!r}.\n"
+            "Only findings produced by redteef or modules that store verification paths "
+            "can be re-tested with this command.",
+            err=True,
+        )
+        sys.exit(2)
+
+    async def _run():
+        http_client = HttpClient(timeout=30.0, retries=1)
+        ctx.http_client = http_client
+        try:
+            return await VerificationRunner().verify(finding_id, ctx)
+        finally:
+            await http_client.close()
+
+    result = asyncio.run(_run())
+
+    status_colour = {"verified": "red", "patched": "green"}.get(result.status, "yellow")
+    click.secho(f"\nFinding:  {finding_id}", bold=True)
+    click.secho(f"Status:   {result.status.upper()}", fg=status_colour, bold=True)
+    click.echo(f"Evidence: {result.evidence}")
+
+    if result.status == "verified":
+        sys.exit(1)  # still vulnerable — non-zero exit for CI pipelines
 
 
 # ------------------------------------------------------------------

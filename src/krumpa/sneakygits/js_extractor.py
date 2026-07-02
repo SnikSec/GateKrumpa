@@ -39,6 +39,27 @@ _URL_PATTERNS: List[re.Pattern[str]] = [
     re.compile(r'''route\s*\(\s*["'`](/[^\s"'`]+)["'`]''', re.IGNORECASE),
 ]
 
+# JSON body field patterns — extract field names from fetch/axios POST payloads (DAST-H2)
+# These capture keys inside object literals passed to fetch/axios body arguments.
+_BODY_FIELD_PATTERNS: List[re.Pattern[str]] = [
+    # JSON object keys: { "key": ..., "key2": ... }
+    re.compile(r'''["']([a-zA-Z_][a-zA-Z0-9_]{1,40})["']\s*:'''),
+    # GraphQL variables block
+    re.compile(r'''variables\s*:\s*\{([^}]{1,300})\}'''),
+    # FormData.append("fieldName", ...)
+    re.compile(r'''\.append\s*\(\s*["']([a-zA-Z_][a-zA-Z0-9_]{1,40})["']'''),
+]
+
+# Directory listing response indicators (DAST-H1)
+_DIRECTORY_LISTING_PATTERNS: List[re.Pattern[str]] = [
+    re.compile(r"<title>Index of /", re.IGNORECASE),            # Nginx / Apache autoindex
+    re.compile(r"<h1>Index of /", re.IGNORECASE),               # Apache
+    re.compile(r"Directory listing for /", re.IGNORECASE),       # Python SimpleHTTPServer
+    re.compile(r'href="[^"]+/">\.\./', re.IGNORECASE),           # Generic parent-dir link
+    re.compile(r"<pre>.*\.\./.*</pre>", re.IGNORECASE | re.DOTALL),  # Apache directory listing body
+    re.compile(r"Apache Tomcat.*directory listing", re.IGNORECASE),
+]
+
 # Secret / sensitive value patterns
 _SECRET_PATTERNS: List[Dict[str, Any]] = [
     {"name": "AWS Access Key", "pattern": re.compile(r"AKIA[0-9A-Z]{16}"), "severity": Severity.CRITICAL},
@@ -64,6 +85,8 @@ class JsExtractionResult(HttpClientMixin):
     secrets: List[Dict[str, str]] = field(default_factory=list)
     source_maps: List[str] = field(default_factory=list)
     js_files_scanned: int = 0
+    # DAST-H2: discovered JSON body parameter names for grotassault
+    body_params: Set[str] = field(default_factory=set)
 
 
 class JsExtractor(HttpClientMixin):
@@ -117,6 +140,12 @@ class JsExtractor(HttpClientMixin):
                 tags=["recon", "js-extraction", "api-endpoints"],
             ))
 
+        # DAST-H2: store discovered body params in target metadata for grotassault
+        if result.body_params:
+            target.metadata.setdefault("js_discovered_params", []).extend(
+                sorted(result.body_params)
+            )
+
         for secret in result.secrets:
             findings.append(Finding(
                 title=f"Secret in JavaScript: {secret['name']}",
@@ -147,6 +176,27 @@ class JsExtractor(HttpClientMixin):
                 tags=["recon", "js-extraction", "source-map"],
             ))
 
+        # DAST-H1: emit directory listing finding if detected during page fetch
+        if target.metadata.get("directory_listing_detected"):
+            findings.append(Finding(
+                title="Directory listing enabled",
+                description=(
+                    "The web server is configured to display a directory index when no "
+                    "index file is present. This exposes the full file hierarchy to "
+                    "unauthenticated visitors and may leak source code, backup files, "
+                    "or configuration data."
+                ),
+                severity=Severity.MEDIUM,
+                target=target,
+                evidence=f"Directory listing response detected at {target.url}",
+                remediation=(
+                    "Disable autoindex in Nginx (`autoindex off;`), Apache (`Options -Indexes`), "
+                    "or Tomcat (`listings=false` in DefaultServlet config)."
+                ),
+                cwe=548,
+                tags=["recon", "directory-listing", "information-exposure"],
+            ))
+
         return findings
 
     def extract_from_source(
@@ -163,7 +213,11 @@ class JsExtractor(HttpClientMixin):
     # ------------------------------------------------------------------
 
     async def _find_js_files(self, target: Target) -> List[str]:
-        """Fetch the page HTML and extract <script src="..."> URLs."""
+        """Fetch the page HTML and extract <script src="..."> URLs.
+
+        Also checks the page HTML for directory listing patterns (DAST-H1)
+        and stores the result in ``target.metadata["directory_listing_detected"]``.
+        """
         js_urls: List[str] = []
 
         # Check target metadata for pre-discovered JS
@@ -174,6 +228,13 @@ class JsExtractor(HttpClientMixin):
         try:
             resp = await client.request("GET", target.url)
             html = getattr(resp, "text", "") or ""
+
+            # DAST-H1: directory listing detection
+            for pattern in _DIRECTORY_LISTING_PATTERNS:
+                if pattern.search(html):
+                    target.metadata["directory_listing_detected"] = True
+                    break
+
             for m in re.finditer(r'<script[^>]+src=["\']([^"\']+)["\']', html, re.IGNORECASE):
                 src = m.group(1)
                 if src.endswith(".js") or ".js?" in src:
@@ -194,7 +255,7 @@ class JsExtractor(HttpClientMixin):
         target: Target,
         result: JsExtractionResult,
     ) -> None:
-        """Parse a single JS file for URLs, secrets, and source maps."""
+        """Parse a single JS file for URLs, secrets, source maps, and body params."""
         base = target.url
 
         # URLs
@@ -205,6 +266,28 @@ class JsExtractor(HttpClientMixin):
                     if url.startswith("/"):
                         url = urljoin(base, url)
                     result.urls.add(url)
+
+        # Body parameter names (DAST-H2) — skip common noise tokens
+        _PARAM_NOISE = frozenset({
+            "id", "type", "name", "value", "data", "key", "url", "title",
+            "content", "text", "body", "status", "code", "message", "error",
+            "token", "action", "method", "params", "query", "page", "size",
+            "limit", "offset", "sort", "order", "filter", "from", "to",
+        })
+        for pattern in _BODY_FIELD_PATTERNS:
+            for m in pattern.finditer(source):
+                raw = m.group(1) if pattern.groups else ""
+                if not raw:
+                    continue
+                # For GraphQL variables block, extract individual keys
+                if "{" not in raw:
+                    if raw not in _PARAM_NOISE and len(raw) >= 3:
+                        result.body_params.add(raw)
+                else:
+                    for km in re.finditer(r'["\'`]?(\w{3,40})["\'`]?\s*:', raw):
+                        param = km.group(1)
+                        if param not in _PARAM_NOISE:
+                            result.body_params.add(param)
 
         # Secrets
         for spec in _SECRET_PATTERNS:

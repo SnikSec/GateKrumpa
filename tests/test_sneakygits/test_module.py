@@ -28,13 +28,14 @@ class _FakeCrawler:
 
 
 class _FakeFingerprinter:
-    """Returns a fixed set of technologies."""
+    """Returns a fixed set of technologies as a FingerprintResult."""
 
     def __init__(self, techs: dict[str, list[str]] | None = None, **kw):
         self._techs = techs or {}
 
-    async def identify(self, url: str) -> list[str]:
-        return self._techs.get(url, [])
+    async def identify(self, url: str):
+        from krumpa.sneakygits.fingerprint import FingerprintResult
+        return FingerprintResult(url=url, technologies=self._techs.get(url, []))
 
 
 class _NoopAsync:
@@ -43,6 +44,16 @@ class _NoopAsync:
         async def _noop(*a, **kw):
             return []
         return _noop
+
+
+class _FakePassiveRecon:
+    """Stub for PassiveReconAnalyzer that returns an empty PassiveReconResult."""
+    def set_client(self, client) -> None:
+        pass
+
+    async def analyze(self, target):
+        from krumpa.sneakygits.passive_recon import PassiveReconResult
+        return PassiveReconResult()
 
 
 def _make_module(
@@ -66,6 +77,7 @@ def _make_module(
     mod._info_leakage = _NoopAsync()
     mod._dns_enum = _NoopAsync()
     mod._platform_exposure = _NoopAsync()
+    mod._passive_recon = _FakePassiveRecon()
     return mod
 
 

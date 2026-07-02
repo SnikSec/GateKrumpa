@@ -27,6 +27,7 @@ from krumpa.bosskey.mfa_tester import MfaTester
 from krumpa.bosskey.saml_analyzer import SamlAnalyzer
 from krumpa.bosskey.remember_me import RememberMeAnalyzer
 from krumpa.bosskey.concurrent_sessions import ConcurrentSessionTester
+from krumpa.bosskey.cloud_identity import CloudIdentityAnalyzer
 
 logger = logging.getLogger("krumpa.bosskey")
 
@@ -65,6 +66,7 @@ class BossKeyModule(BaseModule):
         self._saml_analyzer = SamlAnalyzer()
         self._remember_me = RememberMeAnalyzer()
         self._concurrent_sessions = ConcurrentSessionTester()
+        self._cloud_identity = CloudIdentityAnalyzer()
         self._login_endpoints = login_endpoints or []
 
     async def setup(self, ctx: ScanContext) -> None:
@@ -87,6 +89,7 @@ class BossKeyModule(BaseModule):
             self._saml_analyzer.set_client(ctx.http_client)
             self._remember_me.set_client(ctx.http_client)
             self._concurrent_sessions.set_client(ctx.http_client)
+            self._cloud_identity.set_client(ctx.http_client)
 
     async def run(self, ctx: ScanContext) -> List[Finding]:
         findings: List[Finding] = []
@@ -224,6 +227,11 @@ class BossKeyModule(BaseModule):
             logger.info("Testing concurrent sessions on %s", target.url)
             concurrent_findings = await self._concurrent_sessions.analyze(target)
             findings.extend(concurrent_findings)
+
+        # --- Cloud identity surface (Cognito, Entra, GCP IAP, PKCE) --------
+        for target in ctx.targets:
+            cloud_id_findings = await self._cloud_identity.analyze(target, ctx)
+            findings.extend(cloud_id_findings)
 
         for f in findings:
             self.add_finding(f)
