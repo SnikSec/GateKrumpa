@@ -58,6 +58,7 @@ class ModelHuntModule(BaseModule):
         from krumpa.modelhunt.model_extractor import ModelExtractor
         from krumpa.modelhunt.membership_inference import MembershipInferenceProber
         from krumpa.modelhunt.pii_extractor import PiiExtractor
+        from krumpa.modelhunt.visual_attack_generator import VisualAttackGenerator
         from krumpa.modelhunt.vector_db_scanner import VectorDbScanner
         from krumpa.modelhunt.supply_chain_auditor import SupplyChainAuditor
 
@@ -80,6 +81,12 @@ class ModelHuntModule(BaseModule):
                     findings.extend(new_findings)
                 except Exception as exc:
                     logger.warning("%s failed on %s: %s", type(analyzer).__name__, target.url, exc)
+
+            # Visual attack payload generation
+            try:
+                findings.extend(VisualAttackGenerator().analyze(target, ctx))
+            except Exception as exc:
+                logger.warning("VisualAttackGenerator failed on %s: %s", target.url, exc)
 
         # Vector DB scanner — probes all web targets for exposed vector DB endpoints
         vdb_scanner = VectorDbScanner(http_client=client)

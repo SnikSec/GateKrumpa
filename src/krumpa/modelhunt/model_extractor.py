@@ -167,7 +167,29 @@ class ModelExtractor(HttpClientMixin):
             if self._owns_client and client is not self._client:
                 await client.close()
 
+        # ART text perturbation probing (optional [art] extra)
+        findings.extend(self._art_text_probes(target, ctx))
+
         return findings
+
+    def _art_text_probes(self, target: Target, ctx: ScanContext) -> List[Finding]:
+        """Emit a finding when ART is available for text perturbation attacks."""
+        try:
+            import art  # noqa: F401
+            return [Finding(
+                title=f"ART text perturbation available: {target.url}",
+                description=(
+                    "ART (Adversarial Robustness Toolbox) is installed. "
+                    "TextFooler and TextBugger adversarial text attacks can be run "
+                    "against this endpoint. Use modelhunt.visual_attack_generator "
+                    "for ART-enhanced image payloads."
+                ),
+                severity=Severity.INFO,
+                target=target,
+                tags=["ai", "art", "text-perturbation", "model-extraction"],
+            )]
+        except ImportError:
+            return []
 
 
 async def _chat(client: HttpClient, endpoint: str, session: Any, prompt: str) -> Optional[str]:

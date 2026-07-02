@@ -64,34 +64,89 @@ def to_json(ctx: ScanContext, *, indent: int = 2) -> str:
 
 def to_sarif(ctx: ScanContext) -> Dict[str, Any]:
     """
-    Return a minimal SARIF v2.1.0 object for CI/CD ingestion.
+    Return a SARIF v2.1.0 object for CI/CD ingestion.
+
+    Enhancements over the baseline:
+    - ``relatedLocations`` populated from ``ctx.metadata["attack_chains"]``
+      so each chain step appears as a related location on the entry-point finding.
+    - ``level`` uses blast-radius adjusted severity when available
+      (from ``ctx.metadata["blast_radius"]``).
+    - ``artifacts`` includes Sankey diagram data from
+      ``ctx.metadata["sankey_data"]`` when present.
     """
+    # Build blast-radius lookup: finding_id → adjusted_severity
+    blast_map: Dict[str, str] = {}
+    for br in ctx.metadata.get("blast_radius", []):
+        fid = br.get("finding_id", "")
+        adj = br.get("adjusted_severity", "")
+        if fid and adj:
+            blast_map[fid] = adj
+
+    # Build chain step lookup: finding_id → list of other step URLs in chain
+    chain_related: Dict[str, List[Dict]] = {}
+    for chain in ctx.metadata.get("attack_chains", []):
+        step_ids = [s.id for s in chain.steps]
+        for step in chain.steps:
+            others = [
+                {
+                    "message": {"text": f"Attack chain step: {other.title}"},
+                    "physicalLocation": {
+                        "artifactLocation": {"uri": other.target.url if other.target else "unknown"}
+                    },
+                }
+                for other in chain.steps
+                if other.id != step.id
+            ]
+            if others:
+                chain_related.setdefault(step.id, []).extend(others)
+
     results: List[Dict[str, Any]] = []
     for f in _sorted_findings(ctx.findings):
-        results.append({
+        # Use blast-radius adjusted severity if available
+        effective_severity = blast_map.get(f.id, f.severity.value)
+        result: Dict[str, Any] = {
             "ruleId": f.id,
-            "level": _sarif_level(f.severity.value),
+            "level": _sarif_level(effective_severity),
             "message": {"text": f.title},
             "locations": [{
                 "physicalLocation": {
                     "artifactLocation": {"uri": f.target.url if f.target else "unknown"}
                 }
             }],
+        }
+        # Attach attack chain related locations
+        related = chain_related.get(f.id)
+        if related:
+            result["relatedLocations"] = related
+        results.append(result)
+
+    artifacts: List[Dict[str, Any]] = []
+    sankey = ctx.metadata.get("sankey_data")
+    if sankey:
+        import json as _json
+        artifacts.append({
+            "location": {"uri": "gatekrumpa-attack-chains-sankey.json"},
+            "mimeType": "application/json",
+            "contents": {"text": _json.dumps(sankey)},
         })
+
+    run: Dict[str, Any] = {
+        "tool": {
+            "driver": {
+                "name": "GateKrumpa",
+                "version": "0.2.0",
+                "informationUri": "https://github.com/GateKrumpa/GateKrumpa",
+            }
+        },
+        "results": results,
+    }
+    if artifacts:
+        run["artifacts"] = artifacts
 
     return {
         "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json",
         "version": "2.1.0",
-        "runs": [{
-            "tool": {
-                "driver": {
-                    "name": "GateKrumpa",
-                    "version": "0.1.0",
-                    "informationUri": "https://github.com/GateKrumpa/GateKrumpa",
-                }
-            },
-            "results": results,
-        }],
+        "runs": [run],
     }
 
 
