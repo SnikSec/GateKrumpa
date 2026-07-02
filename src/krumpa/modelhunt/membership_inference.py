@@ -134,7 +134,29 @@ class MembershipInferenceProber(HttpClientMixin):
             if self._owns_client and client is not self._client:
                 await client.close()
 
+        # ART MembershipInferenceBlackBox strengthening (optional [art] extra)
+        findings.extend(self._art_inference_note(target))
+
         return findings
+
+    def _art_inference_note(self, target: Target) -> List[Finding]:
+        """Emit a finding when ART is installed offering statistical MI strengthening."""
+        try:
+            import art  # noqa: F401
+            return [Finding(
+                title=f"ART MembershipInferenceBlackBox available: {target.url}",
+                description=(
+                    "ART is installed. MembershipInferenceBlackBox provides a "
+                    "statistically principled black-box membership inference attack "
+                    "using confidence score distribution analysis — more rigorous than "
+                    "the heuristic verbatim/paraphrase differential used above."
+                ),
+                severity=Severity.INFO,
+                target=target,
+                tags=["ai", "membership-inference", "art", "statistical"],
+            )]
+        except ImportError:
+            return []
 
 
 def _expected_continuation(prefix: str) -> List[str]:

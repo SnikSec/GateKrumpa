@@ -146,7 +146,7 @@ class TestToSarif:
         sarif = to_sarif(ScanContext())
         driver = sarif["runs"][0]["tool"]["driver"]
         assert driver["name"] == "GateKrumpa"
-        assert driver["version"] == "0.1.0"
+        assert driver["version"] == "0.2.0"
         assert "GateKrumpa" in driver["informationUri"]
 
     def test_empty_findings(self):

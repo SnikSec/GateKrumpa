@@ -60,6 +60,13 @@ class AiFuzzModule(BaseModule):
         from krumpa.aifuzz.guardrail_bypass import GuardrailBypass
         from krumpa.aifuzz.indirect_injector import IndirectInjector
         from krumpa.aifuzz.response_analyzer import ResponseAnalyzer
+        from krumpa.aifuzz.encoding_smuggler import EncodingSmuggler
+        from krumpa.aifuzz.goal_hijacker import GoalHijacker
+        from krumpa.aifuzz.context_poisoner import ContextPoisoner
+        from krumpa.aifuzz.visual_attacker import VisualAttacker
+        from krumpa.aifuzz.inter_agent_tester import InterAgentTester
+        from krumpa.aifuzz.protocol_abuser import ProtocolAbuser
+        from krumpa.aifuzz.approval_fatigue import ApprovalFatigueTester
 
         client = ctx.http_client
         analyzers = [
@@ -69,6 +76,13 @@ class AiFuzzModule(BaseModule):
             SystemPromptExtractor(http_client=client),
             GuardrailBypass(http_client=client),
             IndirectInjector(http_client=client),
+            EncodingSmuggler(http_client=client),
+            GoalHijacker(http_client=client),
+            ContextPoisoner(http_client=client),
+            VisualAttacker(http_client=client),
+            InterAgentTester(http_client=client),
+            ProtocolAbuser(http_client=client),
+            ApprovalFatigueTester(http_client=client),
         ]
         response_analyzer = ResponseAnalyzer()
 
